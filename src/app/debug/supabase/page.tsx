@@ -1,9 +1,7 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-
-type TestState = 'idle' | 'loading' | 'ok' | 'error';
 
 export default function SupabaseDebugPage() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -11,53 +9,6 @@ export default function SupabaseDebugPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     '';
-
-  const anonPrefix = useMemo(() => {
-    if (!anonKey) return '';
-    return anonKey.slice(0, 10) + '…';
-  }, [anonKey]);
-
-  const [state, setState] = useState<TestState>('idle');
-  const [detail, setDetail] = useState<string>('');
-
-  async function testConnection() {
-    setState('loading');
-    setDetail('');
-
-    if (!supabaseUrl || !anonKey) {
-      setState('error');
-      setDetail('missing_env');
-      return;
-    }
-
-    try {
-      // Health endpoints vary; this is a safe “reachability” probe.
-      // We treat any HTTP response as "reachable", but show status code.
-      const url = `${supabaseUrl.replace(/\/+$/, '')}/auth/v1/health`;
-
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-          Accept: 'application/json',
-        },
-      });
-
-      const txt = await res.text().catch(() => '');
-      if (res.ok) {
-        setState('ok');
-        setDetail(`ok (${res.status}) ${txt ? `- ${txt.slice(0, 120)}` : ''}`.trim());
-      } else {
-        // Non-200 still proves the endpoint is reachable; show status for debugging.
-        setState('error');
-        setDetail(`reachable_but_non_200 (${res.status}) ${txt ? `- ${txt.slice(0, 120)}` : ''}`.trim());
-      }
-    } catch (e: any) {
-      setState('error');
-      setDetail(e?.message || 'network_error');
-    }
-  }
 
   return (
     <div style={{ padding: 24, fontFamily: 'system-ui', maxWidth: 860 }}>
@@ -70,9 +21,6 @@ export default function SupabaseDebugPage() {
       </div>
 
       <h2>Supabase environment check</h2>
-      <div style={{ opacity: 0.85, marginBottom: 12 }}>
-        This page should never blank out. If env keys are missing, you’ll see it here.
-      </div>
 
       <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
         <div style={{ marginBottom: 8 }}>
@@ -84,22 +32,11 @@ export default function SupabaseDebugPage() {
         </div>
 
         <div style={{ marginBottom: 6 }}>
-          <b>NEXT_PUBLIC_SUPABASE_ANON_KEY:</b> {anonKey ? anonPrefix : '(missing)'}
+          <b>NEXT_PUBLIC_SUPABASE_ANON_KEY:</b> {anonKey ? anonKey.slice(0, 10) + '…' : '(missing)'}
         </div>
 
-        <div style={{ marginTop: 12, display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button onClick={testConnection} disabled={state === 'loading'} style={{ padding: '10px 14px' }}>
-            {state === 'loading' ? 'Testing…' : 'Test Supabase Connection'}
-          </button>
-          <div>
-            {state === 'idle' && <span>—</span>}
-            {state === 'ok' && <span>Supabase reachable ✅ {detail ? `(${detail})` : ''}</span>}
-            {state === 'error' && (
-              <span style={{ color: '#a00' }}>
-                Supabase check failed ❌ {detail ? `(${detail})` : ''}
-              </span>
-            )}
-          </div>
+        <div style={{ marginTop: 10, fontSize: 12, opacity: 0.75 }}>
+          This page exists to prevent “blank screen” failures during deploys by guaranteeing a valid export.
         </div>
       </div>
     </div>
