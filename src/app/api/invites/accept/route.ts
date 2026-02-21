@@ -19,8 +19,7 @@ function getBearer(req: NextRequest): string | null {
 
 function normalizeRpcData(raw: any): any {
   if (Array.isArray(raw)) return raw[0] ?? null;
-  // Some wrappers can show up depending on how it's called
-  if (raw && typeof raw === "object" && "data" in raw && raw.data) return raw.data;
+  if (raw && typeof raw === "object" && "data" in raw && (raw as any).data) return (raw as any).data;
   return raw;
 }
 
@@ -66,17 +65,13 @@ export async function POST(req: NextRequest) {
     return json({ error: "bad_request", detail: "missing_token" }, 400);
   }
 
-  // Auth source preference:
-  // 1) Authorization: Bearer <access_token> (from client localStorage)
-  // 2) Supabase SSR cookies (works on Vercel + browser sessions)
   const bearer = getBearer(req);
 
-  let authSource: "bearer" | "cookie" | "none" = "none";
+  let authSource: "bearer" | "cookie" = bearer ? "bearer" : "cookie";
   let client: any = null;
   let userId: string | null = null;
 
   if (bearer) {
-    authSource = "bearer";
     client = createClient(supabaseUrl, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       global: { headers: { Authorization: `Bearer ${bearer}` } },
@@ -96,7 +91,6 @@ export async function POST(req: NextRequest) {
     }
     userId = u.user.id;
   } else {
-    authSource = "cookie";
     const cookieStore = await cookies();
 
     client = createServerClient(supabaseUrl, anonKey, {
@@ -125,6 +119,11 @@ export async function POST(req: NextRequest) {
     userId = u.user.id;
   }
 
+  // ✅ Narrow type so TypeScript knows userId is a string from here on
+  if (!userId) {
+    return json({ error: "unauthorized", detail: "user_id_missing", auth_source: authSource }, 401);
+  }
+
   try {
     const { data: rawRpcData, error: rpcErr, attempt } = await acceptInviteRpc(client, token, userId);
 
@@ -150,7 +149,7 @@ export async function POST(req: NextRequest) {
 
     const rpcData = normalizeRpcData(rawRpcData);
 
-    // Domain errors from the RPC: { error: 'cannot_accept_own_invite' } etc.
+    // RPC domain errors: { error: 'cannot_accept_own_invite' } etc.
     if (rpcData?.error) {
       return json(
         {
@@ -163,20 +162,16 @@ export async function POST(req: NextRequest) {
     }
 
     const matchId =
-      typeof rpcData === "string"
-        ? rpcData
-        : rpcData?.match_id ?? rpcData?.matchId ?? null;
+      typeof rpcData === "string" ? rpcData : rpcData?.match_id ?? rpcData?.matchId ?? null;
 
-    const inviteId =
-      rpcData?.invite_id ?? rpcData?.inviteId ?? null;
-
+    const inviteId = rpcData?.invite_id ?? rpcData?.inviteId ?? null;
     const idempotent = Boolean(rpcData?.idempotent);
 
     if (!matchId) {
       return json({ error: "unexpected_rpc_shape", detail: debug ? rpcData : null, auth_source: authSource }, 500);
     }
 
-    // Best-effort behavior log (safe via dedup_key unique)
+    // Best-effort behavior log (dedup-safe)
     try {
       const dedup_key = `invite_accept:${userId}:${token}`;
       await client.from("behavior_events").upsert(
