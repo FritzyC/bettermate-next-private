@@ -41,20 +41,25 @@ function getAccessTokenFromLocalStorage(): string | null {
       if (!k || !k.includes('auth-token')) continue;
       const raw = localStorage.getItem(k);
       if (!raw) continue;
+
       let parsed: any = null;
       try {
         parsed = JSON.parse(raw);
       } catch {
         continue;
       }
+
       const sess =
         parsed?.session ||
         parsed?.currentSession ||
         parsed?.data?.session ||
         (parsed?.access_token ? parsed : null);
+
       if (typeof sess?.access_token === 'string') return sess.access_token;
     }
-  } catch {}
+  } catch {
+    // ignore
+  }
   return null;
 }
 
@@ -79,9 +84,10 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   const [msgBody, setMsgBody] = useState('');
   const [sending, setSending] = useState(false);
   const [msgErr, setMsgErr] = useState('');
-  const [rtStatus, setRtStatus] = useState<'off' | 'connecting' | 'subscribed' | 'error' | 'polling'>('off');
+  const [rtStatus, setRtStatus] = useState<'off' | 'connecting' | 'subscribed' | 'polling' | 'error'>('off');
 
-  const [client, setClient] = useState<ReturnType<typeof createClient> | null>(null);
+  // Keep client loosely typed to avoid TS "never" table inference during build.
+  const [client, setClient] = useState<any>(null);
 
   function scrollToBottom() {
     const el = listRef.current;
@@ -90,7 +96,6 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   }
 
   function mergeMessages(next: MessageRow[]) {
-    // normalize + unique by id
     const map = new Map<string, MessageRow>();
     for (const m of next) map.set(m.id, m);
     setMessages((prev) => {
@@ -140,12 +145,12 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         global: { headers: { Authorization: `Bearer ${accessToken}` } },
       });
 
-      // Realtime auth (best-effort)
+      // Best-effort realtime auth (does not affect postgrest queries)
       try {
         c.realtime.setAuth(accessToken);
       } catch {}
 
-      // Validate token and get user (explicit token)
+      // Validate user via explicit token
       const { data: u, error: uErr } = await c.auth.getUser(accessToken);
       const user = u?.user;
 
@@ -156,7 +161,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       if (!alive) return;
 
-      setClient(c);
+      setClient(c as any);
       setUserId(user.id);
 
       const { data: row, error: matchErr } = await c
@@ -182,8 +187,8 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       setMatch(row as MatchRow);
 
-      async function fetchMessages() {
-        const { data: msgs, error: msgsErr } = await c
+      const fetchMessages = async () => {
+        const { data: msgs, error: msgsErr } = await (c as any)
           .from('messages')
           .select('id,match_id,sender_user_id,body,created_at')
           .eq('match_id', matchId)
@@ -196,11 +201,11 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
           return;
         }
         mergeMessages((msgs || []) as MessageRow[]);
-      }
+      };
 
       await fetchMessages();
 
-      // behavior event: match open (best-effort)
+      // Best-effort behavior log: match open
       try {
         const dedup_key = `match_open:${user.id}:${matchId}`;
         await c.from('behavior_events').insert({
@@ -216,11 +221,11 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       setLoading(false);
 
-      // Start polling fallback immediately (will be stopped if realtime subscribes)
+      // Poll fallback (works even if realtime fails)
       setRtStatus('polling');
       pollTimer = setInterval(fetchMessages, 2500);
 
-      // Try realtime subscription; if it subscribes, stop polling
+      // Realtime subscription (best-effort; stop polling if subscribed)
       try {
         setRtStatus('connecting');
         const channel = c
@@ -271,7 +276,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       const body = msgBody.trim();
       setMsgBody('');
 
-      const { data: inserted, error } = await client
+      const { data: inserted, error } = await (client as any)
         .from('messages')
         .insert({
           match_id: matchId,
@@ -289,11 +294,11 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       if (inserted) addMessage(inserted as MessageRow);
 
-      // behavior event: message send (dedup on message id)
+      // Best-effort behavior event (dedup by message id)
       try {
         const msgId = (inserted as any)?.id || 'unknown';
         const dedup_key = `message_send:${userId}:${msgId}`;
-        await client.from('behavior_events').insert({
+        await (client as any).from('behavior_events').insert({
           dedup_key,
           event_type: 'message_send',
           source: 'page',
@@ -360,10 +365,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
               </div>
             )}
 
-            <div
-              ref={listRef}
-              style={{ maxHeight: 320, overflow: 'auto', border: '1px solid #eee', padding: 10 }}
-            >
+            <div ref={listRef} style={{ maxHeight: 320, overflow: 'auto', border: '1px solid #eee', padding: 10 }}>
               {messages.length === 0 ? (
                 <div style={{ opacity: 0.7 }}>No messages yet.</div>
               ) : (

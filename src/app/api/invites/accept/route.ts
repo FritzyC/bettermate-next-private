@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const runtime = 'nodejs';
+
 function json(data: any, status = 200) {
   return NextResponse.json(data, { status });
 }
@@ -15,71 +17,45 @@ function getBearer(req: NextRequest): string | null {
   return m?.[1]?.trim() || null;
 }
 
-async function acceptInviteRpc(
-  client: ReturnType<typeof createClient>,
-  token: string,
-  userId: string,
-  debug: boolean
-): Promise<{ data: any; error: any; attempt: string }> {
-  // Your DB has:
-  // 1) accept_invite(p_token text)
-  // 2) accept_invite(p_token text, p_user_id uuid)
-  //
-  // Prefer the explicit-user variant first, then fallback to p_token-only.
+async function acceptInviteRpc(client: any, token: string, userId: string) {
+  // DB has overloads:
+  //   accept_invite(p_token text) returns jsonb
+  //   accept_invite(p_token text, p_user_id uuid) returns jsonb
   const attempts: Array<{ attempt: string; params: Record<string, any> }> = [
     { attempt: 'p_token+p_user_id', params: { p_token: token, p_user_id: userId } },
     { attempt: 'p_token_only', params: { p_token: token } },
   ];
 
-  let last: any = null;
+  let lastErr: any = null;
   let lastAttempt = 'none';
 
   for (const a of attempts) {
-    const { data, error } = await client.rpc('accept_invite', a.params);
+    // Cast to any to avoid TS thinking this function takes undefined args
+    const { data, error } = await (client as any).rpc('accept_invite', a.params);
     if (!error) return { data, error: null, attempt: a.attempt };
-    last = error;
+    lastErr = error;
     lastAttempt = a.attempt;
 
-    // If PostgREST says function signature mismatch, try the next overload.
+    // Signature mismatch => try next overload
     if (error?.code === 'PGRST202') continue;
 
-    // Otherwise stop early; it's a real DB/permission/business error.
+    // Otherwise stop early (real business/permission error)
     break;
   }
 
-  if (debug) {
-    return {
-      data: null,
-      error: {
-        code: last?.code ?? null,
-        message: last?.message ?? String(last),
-        hint: last?.hint ?? null,
-        details: last?.details ?? null,
-      },
-      attempt: lastAttempt,
-    };
-  }
-
-  return { data: null, error: last, attempt: lastAttempt };
+  return { data: null, error: lastErr, attempt: lastAttempt };
 }
 
 export async function POST(req: NextRequest) {
   const debug = process.env.NEXT_PUBLIC_BM_DEBUG === '1';
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim();
   const publicKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    '';
+    (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim() ||
+    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '').trim();
 
-  if (!isNonEmptyString(supabaseUrl) || !isNonEmptyString(publicKey)) {
-    return json(
-      {
-        error: 'missing_supabase_public_env',
-        detail: debug ? 'Missing NEXT_PUBLIC_SUPABASE_URL or public key' : null,
-      },
-      500
-    );
+  if (!supabaseUrl || !publicKey) {
+    return json({ error: 'missing_supabase_public_env' }, 500);
   }
 
   let body: any = null;
@@ -102,23 +78,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // IMPORTANT:
-  // - publicKey is ALWAYS used as apikey
-  // - bearer is ONLY used as Authorization: Bearer <access_token>
-  const client = createClient(supabaseUrl, publicKey, {
+  // Use public key + user bearer (no service role required)
+  const client = createClient<any>(supabaseUrl, publicKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     global: { headers: { Authorization: `Bearer ${bearer}` } },
   });
 
-  // Validate bearer and identify user
-  const { data: userData, error: userErr } = await client.auth.getUser();
-  const user = userData?.user;
+  // Validate bearer and get user id (explicit token)
+  const { data: u, error: uErr } = await client.auth.getUser(bearer);
+  const user = u?.user;
 
-  if (userErr || !user?.id) {
+  if (uErr || !user?.id) {
     return json(
       {
         error: 'unauthorized',
-        detail: userErr?.message || 'Auth session missing!',
+        detail: debug ? (uErr?.message || 'Auth session missing!') : 'unauthorized',
         cookie_names: [],
         bearer_present: true,
       },
@@ -128,39 +102,38 @@ export async function POST(req: NextRequest) {
 
   const userId = user.id;
 
-  // Call the correct accept_invite overload
-  const { data: rpcData, error: rpcErr, attempt } = await acceptInviteRpc(client, token, userId, debug);
+  const { data: rpcData, error: rpcErr, attempt } = await acceptInviteRpc(client, token, userId);
 
   if (rpcErr) {
     return json(
       {
         error: 'rpc_error',
-        detail: debug ? rpcErr : 'rpc_error',
-        code: debug ? (rpcErr?.code ?? null) : null,
+        detail: debug
+          ? { code: rpcErr?.code ?? null, message: rpcErr?.message ?? String(rpcErr), hint: rpcErr?.hint ?? null, details: rpcErr?.details ?? null }
+          : 'rpc_error',
+        code: rpcErr?.code ?? null,
         attempt: debug ? attempt : undefined,
       },
       500
     );
   }
 
-  // Normalize return shapes
-  let matchId: string | null = null;
-  let inviteId: string | null = null;
-  let idempotent = false;
+  // Normalize return
+  const matchId =
+    typeof rpcData === 'string'
+      ? rpcData
+      : rpcData?.match_id ?? rpcData?.matchId ?? null;
 
-  if (typeof rpcData === 'string') {
-    matchId = rpcData;
-  } else if (rpcData && typeof rpcData === 'object') {
-    matchId = rpcData.match_id ?? rpcData.matchId ?? null;
-    inviteId = rpcData.invite_id ?? rpcData.inviteId ?? null;
-    idempotent = Boolean(rpcData.idempotent);
-  }
+  const inviteId =
+    rpcData?.invite_id ?? rpcData?.inviteId ?? null;
+
+  const idempotent = Boolean(rpcData?.idempotent);
 
   if (!matchId) {
     return json({ error: 'unexpected_rpc_shape', detail: debug ? rpcData : null }, 500);
   }
 
-  // Best-effort behavior logging (do not fail accept if insert fails)
+  // Best-effort behavior log (do not fail accept if insert fails)
   try {
     const dedup_key = `invite_accept:${userId}:${token}`;
     await client.from('behavior_events').insert({
@@ -173,9 +146,7 @@ export async function POST(req: NextRequest) {
       match_id: matchId,
       metadata: { token_prefix: token.slice(0, 8), token_len: token.length },
     });
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   return json({ ok: true, match_id: matchId, invite_id: inviteId, idempotent });
 }

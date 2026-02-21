@@ -62,12 +62,12 @@ export function bmNormalizeEvent(raw: Partial<BMEvent>): QueuedEvent {
   return {
     event_type,
     source,
-    user_id: raw.user_id ?? null,
-    user_email: raw.user_email ?? null,
-    match_id: raw.match_id ?? null,
-    invite_id: raw.invite_id ?? null,
-    date_plan_id: raw.date_plan_id ?? null,
-    message_id: raw.message_id ?? null,
+    user_id: raw.user_id ?? undefined,
+    user_email: raw.user_email ?? undefined,
+    match_id: raw.match_id ?? undefined,
+    invite_id: raw.invite_id ?? undefined,
+    date_plan_id: raw.date_plan_id ?? undefined,
+    message_id: raw.message_id ?? undefined,
     metadata: raw.metadata ?? {},
     occurred_at: raw.occurred_at ?? nowIso,
     dedup_key: raw.dedup_key ?? `${source}-${event_type}-${mkId()}`,
@@ -121,7 +121,7 @@ export async function bmFlushQueues(
   if (!client) {
     try {
       const mod = await import("@/lib/supabaseClient");
-      client = mod.getSupabase?.() ?? null;
+      client = mod.getSupabase?.() ?? undefined;
     } catch (e) {
       return { flushed: 0, kept: q.length, lastError: `no_supabase_client: ${String(e)}` };
     }

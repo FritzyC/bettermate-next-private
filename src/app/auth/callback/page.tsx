@@ -11,21 +11,21 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     (async () => {
-      const err = sp.get("error");
+      const err = sp?.get("error");
       if (err) {
         const msg =
-          sp.get("error_description") || sp.get("msg") || sp.get("error_code") || "";
+          sp?.get("error_description") || sp?.get("msg") || sp?.get("error_code") || "";
         router.replace(`/auth?error=${encodeURIComponent(err)}&msg=${encodeURIComponent(msg)}`);
         return;
       }
 
-      const confirmationUrl = sp.get("confirmation_url");
+      const confirmationUrl = sp?.get("confirmation_url");
       if (confirmationUrl) {
         window.location.href = confirmationUrl;
         return;
       }
 
-      const code = sp.get("code");
+      const code = sp?.get("code");
       if (!code) {
         router.replace("/auth?error=missing_callback_params");
         return;

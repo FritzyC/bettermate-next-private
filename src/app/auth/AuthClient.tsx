@@ -35,9 +35,9 @@ export default function AuthClient() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string>("");
 
-  const inboundError = safeTrim(sp.get("error"));
-  const inboundMsg = safeTrim(sp.get("msg"));
-  const inboundErrorDesc = safeTrim(sp.get("error_description"));
+  const inboundError = safeTrim(sp?.get("error"));
+  const inboundMsg = safeTrim(sp?.get("msg"));
+  const inboundErrorDesc = safeTrim(sp?.get("error_description"));
 
   async function sendEmail() {
     setStatus("");
