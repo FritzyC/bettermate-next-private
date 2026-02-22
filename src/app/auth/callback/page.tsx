@@ -1,58 +1,88 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { getSupabase } from "@/lib/supabaseClient";
+
+function sanitizeNext(nextRaw: string | null): string {
+  if (!nextRaw) return "/";
+  if (nextRaw.startsWith("/")) return nextRaw;
+  return "/";
+}
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const sp = useSearchParams();
+  const spGet = (k: string) => (sp ? sp.get(k) : null);
+
+  const nextPath = useMemo(() => sanitizeNext(spGet("next")), [sp]);
   const [status, setStatus] = useState("Completing sign-in…");
 
   useEffect(() => {
     (async () => {
-      const err = sp?.get("error");
-      if (err) {
-        const msg =
-          sp?.get("error_description") || sp?.get("msg") || sp?.get("error_code") || "";
-        router.replace(`/auth?error=${encodeURIComponent(err)}&msg=${encodeURIComponent(msg)}`);
+      const inboundError = spGet("error");
+      const inboundMsg = spGet("msg") || spGet("error_description") || "";
+
+      if (inboundError) {
+        router.replace(
+          `/auth?next=${encodeURIComponent(nextPath)}&error=${encodeURIComponent(
+            inboundError
+          )}&msg=${encodeURIComponent(inboundMsg)}`
+        );
         return;
       }
 
-      const confirmationUrl = sp?.get("confirmation_url");
-      if (confirmationUrl) {
-        window.location.href = confirmationUrl;
-        return;
-      }
-
-      const code = sp?.get("code");
-      if (!code) {
-        router.replace("/auth?error=missing_callback_params");
-        return;
-      }
-
+      const code = spGet("code");
       const supabase = getSupabase();
+
       if (!supabase) {
-        router.replace("/auth?error=supabase_client_null");
+        router.replace(
+          `/auth?next=${encodeURIComponent(nextPath)}&error=env_missing&msg=${encodeURIComponent(
+            "Supabase client unavailable (env missing)."
+          )}`
+        );
         return;
       }
 
-      setStatus("Verifying link…");
+      if (!code) {
+        router.replace(
+          `/auth?next=${encodeURIComponent(nextPath)}&error=missing_code&msg=${encodeURIComponent(
+            "No OAuth code returned."
+          )}`
+        );
+        return;
+      }
+
+      setStatus("Exchanging code for session…");
       const { error } = await supabase.auth.exchangeCodeForSession(code);
+
       if (error) {
-        router.replace(`/auth?error=exchange_failed&msg=${encodeURIComponent(error.message)}`);
+        router.replace(
+          `/auth?next=${encodeURIComponent(nextPath)}&error=exchange_failed&msg=${encodeURIComponent(
+            error.message
+          )}`
+        );
         return;
       }
 
       setStatus("Signed in. Redirecting…");
-      router.replace("/");
+      router.replace(nextPath);
     })();
-  }, [router, sp]);
+  }, [router, sp, nextPath]);
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", padding: 16 }}>
+    <main style={{ padding: 24, fontFamily: "system-ui", maxWidth: 720 }}>
       <h1>BetterMate</h1>
-      <p>{status}</p>
+      <div style={{ marginBottom: 12 }}>
+        <Link href="/">Home</Link>
+        <span style={{ margin: "0 8px" }}>·</span>
+        <Link href="/auth">Login</Link>
+      </div>
+
+      <div style={{ padding: 14, border: "1px solid #ddd", borderRadius: 10 }}>
+        {status}
+      </div>
     </main>
   );
 }

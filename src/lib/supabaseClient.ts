@@ -1,58 +1,23 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __BM_SUPABASE_BROWSER_CLIENT__: SupabaseClient | undefined;
-}
+let browserClient: SupabaseClient | null = null;
 
-function safeTrim(v: string | undefined | null): string {
-  return (v ?? "").trim();
-}
-
-function getEnv() {
-  const url = safeTrim(process.env.NEXT_PUBLIC_SUPABASE_URL);
-  const anonKey = safeTrim(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  return { url, anonKey };
-}
-
-export function getBrowserSupabaseClient(): SupabaseClient | null {
+export function getSupabase(): SupabaseClient | null {
   if (typeof window === "undefined") return null;
 
-  const { url, anonKey } = getEnv();
-  if (!url || !anonKey) return null;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
-  if (!globalThis.__BM_SUPABASE_BROWSER_CLIENT__) {
-    globalThis.__BM_SUPABASE_BROWSER_CLIENT__ = createClient(url, anonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        flowType: "pkce",
-      },
-    });
+  if (!url || !anon) return null;
+  if (browserClient) return browserClient;
 
-    const debug = safeTrim(process.env.NEXT_PUBLIC_BM_DEBUG);
-    if (debug === "1") {
-      (globalThis as any).__BM_SUPABASE__ = globalThis.__BM_SUPABASE_BROWSER_CLIENT__;
-    }
-  }
+  browserClient = createClient(url, anon, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+    },
+  });
 
-  return globalThis.__BM_SUPABASE_BROWSER_CLIENT__!;
+  return browserClient;
 }
-
-/**
- * Compatibility export expected by app code:
- * import { getSupabase } from "@/lib/supabaseClient"
- */
-export function getSupabase(): SupabaseClient | null {
-  return getBrowserSupabaseClient();
-}
-
-/** Legacy alias */
-export function getSupabaseClient(): SupabaseClient | null {
-  return getBrowserSupabaseClient();
-}
-
-/** Legacy singleton export */
-export const supabase: SupabaseClient | null =
-  typeof window === "undefined" ? null : getBrowserSupabaseClient();

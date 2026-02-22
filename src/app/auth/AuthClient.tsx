@@ -1,82 +1,82 @@
-'use client';
+"use client";
 
-import React, { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { getSupabase } from '@/lib/supabaseClient';
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { getSupabase } from "@/lib/supabaseClient";
 
-function safeTrim(v: string | null | undefined): string {
-  return (v ?? '').trim();
+function safeTrim(v: string | null | undefined) {
+  return (v ?? "").toString().trim();
 }
 
-function sanitizeNextPath(nextRaw: string): string {
-  const s = safeTrim(nextRaw);
-  if (!s) return '/';
-  if (s.startsWith('http://') || s.startsWith('https://')) return '/';
-  if (!s.startsWith('/')) return '/';
-  return s;
-}
-
-function joinUrl(base: string, path: string): string {
-  const b = (base || '').replace(/\/+$/, '');
-  const p = (path || '').replace(/^\/+/, '');
-  return `${b}/${p}`;
+function sanitizeNext(nextRaw: string | null): string {
+  if (!nextRaw) return "/";
+  if (nextRaw.startsWith("/")) return nextRaw;
+  return "/";
 }
 
 export default function AuthClient() {
   const router = useRouter();
   const sp = useSearchParams();
-
   const spGet = (k: string) => (sp ? sp.get(k) : null);
 
-  const inboundError = safeTrim(spGet('error'));
-  const inboundMsg = safeTrim(spGet('msg'));
-  const inboundErrorDesc = safeTrim(spGet('error_description'));
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
 
-  const nextPath = useMemo(() => sanitizeNextPath(spGet('next') ?? '/'), [sp]);
+  const origin =
+    typeof window !== "undefined" ? window.location.origin : siteUrl || "";
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  const siteUrlEnv = process.env.NEXT_PUBLIC_SITE_URL || '';
-
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const siteUrl = siteUrlEnv || origin;
+  const nextPath = useMemo(() => sanitizeNext(spGet("next")), [sp]);
 
   const callbackUrl = useMemo(() => {
-    const base = siteUrl || origin;
-    const cb = joinUrl(base, 'auth/callback');
-    const url = new URL(cb);
-    url.searchParams.set('next', nextPath);
-    return url.toString();
-  }, [siteUrl, origin, nextPath]);
+    const base = origin || siteUrl || "";
+    return base ? `${base}/auth/callback?next=${encodeURIComponent(nextPath)}` : "";
+  }, [origin, siteUrl, nextPath]);
 
-  const envOk = Boolean(supabaseUrl && anonKey && siteUrl);
+  const envOk = Boolean(supabaseUrl && anonKey && callbackUrl);
 
+  const inboundError = safeTrim(spGet("error"));
+  const inboundMsg = safeTrim(spGet("msg"));
+  const inboundErrorDesc = safeTrim(spGet("error_description"));
+
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<string>('');
-  const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
+  const [status, setStatus] = useState("");
+
+  useEffect(() => {
+    (async () => {
+      const supabase = getSupabase();
+      if (!supabase) return;
+
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) {
+        router.replace(nextPath);
+      }
+    })();
+  }, [router, nextPath]);
 
   async function continueWithGoogle() {
-    setStatus('');
+    setStatus("");
     if (!envOk) {
-      setStatus('Failed: env_missing');
+      setStatus("Failed: missing env (SUPABASE_URL / ANON_KEY / SITE_URL).");
       return;
     }
 
     const supabase = getSupabase();
     if (!supabase) {
-      setStatus('Failed: supabase_client_missing');
+      setStatus("Failed: Supabase client unavailable.");
       return;
     }
 
     try {
       setBusy(true);
-
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: callbackUrl,
+          skipBrowserRedirect: true,
         },
       });
 
@@ -90,7 +90,7 @@ export default function AuthClient() {
         return;
       }
 
-      setStatus('Failed: oauth_no_url');
+      setStatus("Failed: missing OAuth redirect URL.");
     } catch (e: any) {
       setStatus(`Failed: ${e?.message ?? String(e)}`);
     } finally {
@@ -99,27 +99,26 @@ export default function AuthClient() {
   }
 
   async function sendEmail() {
-    setStatus('');
+    setStatus("");
     if (!envOk) {
-      setStatus('Failed: env_missing');
-      return;
-    }
-
-    const e = safeTrim(email);
-    if (!e) {
-      setStatus('Failed: missing_email');
+      setStatus("Failed: missing env.");
       return;
     }
 
     const supabase = getSupabase();
     if (!supabase) {
-      setStatus('Failed: supabase_client_missing');
+      setStatus("Failed: Supabase client unavailable.");
+      return;
+    }
+
+    const e = safeTrim(email);
+    if (!e) {
+      setStatus("Failed: enter an email.");
       return;
     }
 
     try {
       setBusy(true);
-
       const { error } = await supabase.auth.signInWithOtp({
         email: e,
         options: {
@@ -132,7 +131,7 @@ export default function AuthClient() {
         return;
       }
 
-      setStatus('Email sent. If the link does not open, paste the OTP code below and verify.');
+      setStatus("Email sent. Use the OTP code entry below if links don’t open.");
     } catch (err: any) {
       setStatus(`Failed: ${err?.message ?? String(err)}`);
     } finally {
@@ -141,9 +140,15 @@ export default function AuthClient() {
   }
 
   async function verifyCode() {
-    setStatus('');
+    setStatus("");
     if (!envOk) {
-      setStatus('Failed: env_missing');
+      setStatus("Failed: missing env.");
+      return;
+    }
+
+    const supabase = getSupabase();
+    if (!supabase) {
+      setStatus("Failed: Supabase client unavailable.");
       return;
     }
 
@@ -151,27 +156,20 @@ export default function AuthClient() {
     const c = safeTrim(code);
 
     if (!e) {
-      setStatus('Failed: missing_email');
+      setStatus("Failed: enter the same email you requested OTP for.");
       return;
     }
     if (!c) {
-      setStatus('Failed: missing_code');
-      return;
-    }
-
-    const supabase = getSupabase();
-    if (!supabase) {
-      setStatus('Failed: supabase_client_missing');
+      setStatus("Failed: enter the OTP code from the email.");
       return;
     }
 
     try {
       setBusy(true);
-
       const { error } = await supabase.auth.verifyOtp({
         email: e,
         token: c,
-        type: 'email',
+        type: "email",
       });
 
       if (error) {
@@ -188,29 +186,29 @@ export default function AuthClient() {
   }
 
   return (
-    <main style={{ padding: 24, fontFamily: 'system-ui', maxWidth: 720 }}>
+    <main style={{ padding: 24, fontFamily: "system-ui", maxWidth: 720 }}>
       <h1>BetterMate Login</h1>
 
       <div style={{ marginBottom: 12 }}>
         <Link href="/">Home</Link>
-        <span style={{ margin: '0 8px' }}>·</span>
+        <span style={{ margin: "0 8px" }}>·</span>
         <Link href="/debug/bm">Debug</Link>
       </div>
 
-      <section style={{ padding: 14, border: '1px solid #ddd', borderRadius: 10 }}>
+      <section style={{ padding: 14, border: "1px solid #ddd", borderRadius: 10 }}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Debug</div>
         <div>AUTH_CLIENT_RENDER=v3</div>
-        <div>NEXT_PUBLIC_SUPABASE_URL: {supabaseUrl || '(missing)'}</div>
-        <div>hasAnonKey: {anonKey ? 'true' : 'false'}</div>
-        <div>anonKeyPrefix: {anonKey ? anonKey.slice(0, 8) : '(missing)'}</div>
-        <div>NEXT_PUBLIC_SITE_URL: {siteUrlEnv || '(missing)'} </div>
-        <div>origin: {origin || '(missing)'}</div>
-        <div>callbackUrl: {callbackUrl || '(missing)'}</div>
+        <div>NEXT_PUBLIC_SUPABASE_URL: {supabaseUrl || "(missing)"}</div>
+        <div>hasAnonKey: {anonKey ? "true" : "false"}</div>
+        <div>anonKeyPrefix: {anonKey ? anonKey.slice(0, 8) : "(missing)"}</div>
+        <div>NEXT_PUBLIC_SITE_URL: {siteUrl || "(missing)"}</div>
+        <div>origin: {origin || "(missing)"}</div>
+        <div>callbackUrl: {callbackUrl || "(missing)"}</div>
         <div>next: {nextPath}</div>
-        <div>env: {envOk ? 'OK' : 'MISSING'}</div>
+        <div>env: {envOk ? "OK" : "MISSING"}</div>
 
         {(inboundError || inboundMsg || inboundErrorDesc) && (
-          <div style={{ marginTop: 10, padding: 10, background: '#fee', border: '1px solid #fbb' }}>
+          <div style={{ marginTop: 10, padding: 10, background: "#fee", border: "1px solid #fbb" }}>
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Inbound</div>
             {inboundError && <div>error: {inboundError}</div>}
             {inboundErrorDesc && <div>error_description: {inboundErrorDesc}</div>}
@@ -219,27 +217,27 @@ export default function AuthClient() {
         )}
       </section>
 
-      <section style={{ marginTop: 16, padding: 14, border: '1px solid #ddd', borderRadius: 10 }}>
+      <section style={{ marginTop: 16, padding: 14, border: "1px solid #ddd", borderRadius: 10 }}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Fast login (recommended)</div>
 
         <button
           onClick={continueWithGoogle}
           disabled={busy || !envOk}
           style={{
-            padding: '10px 14px',
+            padding: "10px 14px",
             borderRadius: 8,
-            border: '1px solid #333',
-            width: '100%',
+            border: "1px solid #333",
+            width: "100%",
             fontWeight: 600,
           }}
         >
-          {busy ? 'Working…' : 'Continue with Google'}
+          {busy ? "Working…" : "Continue with Google"}
         </button>
 
-        <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #eee' }}>
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #eee" }}>
           <div style={{ fontWeight: 700, marginBottom: 10 }}>Email OTP (may rate-limit)</div>
 
-          <label htmlFor="bm_email" style={{ display: 'block', fontWeight: 600, marginBottom: 6 }}>
+          <label htmlFor="bm_email" style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>
             Email
           </label>
           <input
@@ -248,21 +246,21 @@ export default function AuthClient() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            style={{ width: '100%', padding: 10, border: '1px solid #ccc', borderRadius: 8 }}
+            style={{ width: "100%", padding: 10, border: "1px solid #ccc", borderRadius: 8 }}
           />
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
             <button
               onClick={sendEmail}
               disabled={busy || !envOk}
-              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #333' }}
+              style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #333" }}
             >
               Send email
             </button>
           </div>
 
-          <div style={{ marginTop: 18, paddingTop: 12, borderTop: '1px solid #eee' }}>
-            <label htmlFor="bm_otp" style={{ display: 'block', fontWeight: 600, marginBottom: 6 }}>
+          <div style={{ marginTop: 18, paddingTop: 12, borderTop: "1px solid #eee" }}>
+            <label htmlFor="bm_otp" style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>
               OTP code (use this if links don’t open)
             </label>
             <input
@@ -271,13 +269,13 @@ export default function AuthClient() {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="Enter code from email"
-              style={{ width: '100%', padding: 10, border: '1px solid #ccc', borderRadius: 8 }}
+              style={{ width: "100%", padding: 10, border: "1px solid #ccc", borderRadius: 8 }}
             />
-            <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
               <button
                 onClick={verifyCode}
                 disabled={busy || !envOk}
-                style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #333' }}
+                style={{ padding: "10px 14px", borderRadius: 8, border: "1px solid #333" }}
               >
                 Verify OTP & Sign in
               </button>
@@ -286,16 +284,16 @@ export default function AuthClient() {
         </div>
 
         {status && (
-          <p style={{ marginTop: 12, color: status.toLowerCase().includes('failed') ? '#b00020' : '#222' }}>
+          <p style={{ marginTop: 12, color: status.toLowerCase().includes("failed") ? "#b00020" : "#222" }}>
             {status}
           </p>
         )}
       </section>
 
-      <section style={{ marginTop: 18, fontSize: 13, color: '#444' }}>
+      <section style={{ marginTop: 18, fontSize: 13, color: "#444" }}>
         <p>
-          If you open an email on your phone, your device cannot use <code>http://localhost:3000</code>.
-          For local dev, prefer the OTP code field or set <code>NEXT_PUBLIC_SITE_URL</code> to a reachable URL.
+          If you start login in one browser and finish it in another (or storage is cleared), PKCE exchange will fail.
+          This implementation keeps the exchange in the browser callback page and persists session locally.
         </p>
       </section>
     </main>
