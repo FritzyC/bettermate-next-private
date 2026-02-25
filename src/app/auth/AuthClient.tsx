@@ -5,10 +5,16 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabase } from '@/lib/supabaseClient';
 
-export const AUTH_CLIENT_RENDER = 'v4';
+export const AUTH_CLIENT_RENDER = 'v5';
+const EXPECTED_AUTH_CLIENT_RENDER = 'v5';
 
 function safeTrim(v: string | null | undefined) {
   return (v ?? '').trim();
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
 }
 
 export default function AuthClient() {
@@ -24,7 +30,6 @@ export default function AuthClient() {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || '';
 
-  const nextParam = safeTrim(sp?.get('next')) || '/';
   const inboundError = safeTrim(sp?.get('error'));
   const inboundMsg = safeTrim(sp?.get('msg'));
   const inboundErrorDesc = safeTrim(sp?.get('error_description'));
@@ -35,10 +40,9 @@ export default function AuthClient() {
   }, []);
 
   const callbackUrl = useMemo(() => {
-    const base = siteUrl || origin || '';
-    if (!base) return '';
-    return `${base}/auth/callback?next=${encodeURIComponent(nextParam)}`;
-  }, [siteUrl, origin, nextParam]);
+    if (!supabaseUrl) return '';
+    return `${supabaseUrl}/auth/v1/callback`;
+  }, [supabaseUrl]);
 
   const envOk = Boolean(supabaseUrl && anonKey);
 
@@ -64,8 +68,8 @@ export default function AuthClient() {
       });
 
       if (error) setStatus(`Failed: ${error.message}`);
-    } catch (e: any) {
-      setStatus(`Failed: ${e?.message ?? String(e)}`);
+    } catch (error: unknown) {
+      setStatus(`Failed: ${getErrorMessage(error)}`);
     } finally {
       setBusy(false);
     }
@@ -98,8 +102,8 @@ export default function AuthClient() {
 
       if (error) setStatus(`Failed: ${error.message}`);
       else setStatus('Email sent. Use OTP box if the link does not open.');
-    } catch (e: any) {
-      setStatus(`Failed: ${e?.message ?? String(e)}`);
+    } catch (error: unknown) {
+      setStatus(`Failed: ${getErrorMessage(error)}`);
     } finally {
       setBusy(false);
     }
@@ -138,9 +142,9 @@ export default function AuthClient() {
         return;
       }
 
-      router.replace(nextParam);
-    } catch (e: any) {
-      setStatus(`Failed: ${e?.message ?? String(e)}`);
+      router.replace('/');
+    } catch (error: unknown) {
+      setStatus(`Failed: ${getErrorMessage(error)}`);
     } finally {
       setBusy(false);
     }
@@ -165,7 +169,6 @@ export default function AuthClient() {
         <div>NEXT_PUBLIC_SITE_URL: {siteUrl || '(missing)'}</div>
         <div>origin: {origin || '(missing)'}</div>
         <div>callbackUrl: {callbackUrl || '(missing)'}</div>
-        <div>next: {nextParam}</div>
         <div>env: {envOk ? 'OK' : 'MISSING'}</div>
 
         {(inboundError || inboundMsg || inboundErrorDesc) && (
@@ -177,6 +180,20 @@ export default function AuthClient() {
           </div>
         )}
       </section>
+
+      {AUTH_CLIENT_RENDER !== EXPECTED_AUTH_CLIENT_RENDER && (
+        <section style={{ marginTop: 16, padding: 14, border: '2px solid #ff6b6b', background: '#ffe0e0', borderRadius: 10 }}>
+          <div style={{ fontWeight: 700, color: '#c92a2a', marginBottom: 8 }}>
+            ⚠️ Stale Deploy Detected
+          </div>
+          <div style={{ color: '#862e2e', fontSize: 14 }}>
+            Running OAuth mode: v{AUTH_CLIENT_RENDER} (expected v{EXPECTED_AUTH_CLIENT_RENDER})
+          </div>
+          <div style={{ color: '#862e2e', fontSize: 13, marginTop: 6 }}>
+            Try refreshing the page with Ctrl+Shift+R (hard refresh) or clearing your browser cache.
+          </div>
+        </section>
+      )}
 
       <section style={{ marginTop: 16, padding: 14, border: '1px solid #ddd', borderRadius: 10 }}>
         <div style={{ fontWeight: 700, marginBottom: 10 }}>Fast login (recommended)</div>
@@ -222,7 +239,7 @@ export default function AuthClient() {
 
           <div style={{ marginTop: 18, paddingTop: 12, borderTop: '1px solid #eee' }}>
             <label htmlFor="bm_otp" style={{ display: 'block', fontWeight: 600, marginBottom: 6 }}>
-              OTP code (use this if links don’t open)
+              OTP code (use this if links don&apos;t open)
             </label>
             <input
               id="bm_otp"
