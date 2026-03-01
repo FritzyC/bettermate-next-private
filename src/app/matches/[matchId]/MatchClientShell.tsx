@@ -69,7 +69,7 @@ export default function MatchClientShell({ params }: { params: { matchId: string
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui' }}>
       <div style={{ padding: '16px 24px', borderBottom: '1px solid #222', display: 'flex', alignItems: 'center', gap: 16 }}>
         <a href="/matches" style={{ color: '#888', textDecoration: 'none' }}>← Back</a>
-        <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Match #{params.matchId.slice(0, 8)}</h1>
+        <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Match #{params?.matchId ? String(params.matchId).slice(0, 8) : '...'}</h1>
       </div>
 
       {params?.matchId && <CompatibilitySnapshot matchId={params.matchId} />}
