@@ -56,7 +56,7 @@ export default function MatchesClientShell() {
             {matches.map((match) => (
               <a key={match.id} href={'/matches/' + match.id} style={{ display: 'block', padding: 20, background: '#111', borderRadius: 12, border: '1px solid #222', textDecoration: 'none', color: '#fff' }}>
                 <div style={{ fontSize: 14, color: '#888', marginBottom: 4 }}>Match</div>
-                <div style={{ fontWeight: 600 }}>{'#' + (match.id ? match.id.slice(0, 8) : '')}</div>
+                <div style={{ fontWeight: 600 }}>{'#' + (match?.id ? String(match.id).slice(0, 8) : 'unknown')}</div>
                 <div style={{ fontSize: 12, color: '#555', marginTop: 8 }}>{new Date(match.created_at).toLocaleDateString()}</div>
               </a>
             ))}
