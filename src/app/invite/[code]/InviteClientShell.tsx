@@ -1,119 +1,54 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { acceptInvite, getInvitePreview, type InvitePreview } from '@/lib/bm/invite';
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getSupabase } from "@/lib/supabaseClient";
 
-export default function InviteClientShell({ token }: { token: string }) {
+export default function InviteClientShell({ code }: { code: string }) {
   const router = useRouter();
-  const [preview, setPreview] = useState<InvitePreview | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [actionState, setActionState] = useState<'idle' | 'loading' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [status, setStatus] = useState("Loading invite...");
+  const [error, setError] = useState<string | null>(null);
 
-  const safeNext = useMemo(() => `/invite/${encodeURIComponent(token)}`, [token]);
+  async function acceptInvite() {
+    setStatus("Accepting invite...");
+    const supabase = getSupabase();
+    if (!supabase) { setError("Not authenticated"); return; }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.replace("/auth?next=/invite/" + code); return; }
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const data = await getInvitePreview(token);
-        if (!alive) return;
-        setPreview(data);
-      } catch (e: any) {
-        if (!alive) return;
-        setPreview({ error: 'preview_failed' });
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, [token]);
-
-  async function onAccept() {
-    setActionState('loading');
-    setErrorMsg('');
-
-    try {
-      const { status, data } = await acceptInvite(token);
-
-      if (status === 401 || data?.error === 'unauthorized') {
-        router.push(`/auth?next=${encodeURIComponent(safeNext)}`);
-        return;
-      }
-
-      if (data?.error) {
-        setErrorMsg(String(data.error));
-        setActionState('error');
-        return;
-      }
-
-      if (!data?.ok || !data?.match_id) {
-        setErrorMsg('unexpected_response');
-        setActionState('error');
-        return;
-      }
-
-      router.push(`/matches/${data.match_id}`);
-    } catch (e: any) {
-      setErrorMsg(e?.message ?? 'network_error');
-      setActionState('error');
+    const res = await fetch("/api/invites/accept", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: code }),
+    });
+    const json = await res.json();
+    if (json.ok) {
+      router.replace("/matches/" + json.match_id);
+    } else {
+      setError(json.error || "Failed to accept invite");
     }
   }
 
-  const title = 'BetterMate';
+  useEffect(() => {
+    setStatus("Ready to accept invite");
+  }, [code]);
 
-  if (loading) {
-    return (
-      <div style={{ padding: 24, fontFamily: 'system-ui' }}>
-        <h1>{title}</h1>
-        <div>Loading invite…</div>
-      </div>
-    );
-  }
-
-  if (!preview) {
-    return (
-      <div style={{ padding: 24, fontFamily: 'system-ui' }}>
-        <h1>{title}</h1>
-        <div>Failed to load invite.</div>
-      </div>
-    );
-  }
-
-  if ('error' in preview) {
-    return (
-      <div style={{ padding: 24, fontFamily: 'system-ui' }}>
-        <h1>{title}</h1>
-        <div>Invite error: {preview.error}</div>
-      </div>
-    );
-  }
+  if (error) return (
+    <div style={{ padding: 40, color: "#fff", fontFamily: "system-ui", textAlign: "center" }}>
+      <h2>Error</h2><p style={{ color: "#f87171" }}>{error}</p>
+      <a href="/" style={{ color: "#6366f1" }}>Go home</a>
+    </div>
+  );
 
   return (
-    <div style={{ padding: 24, fontFamily: 'system-ui', maxWidth: 520 }}>
-      <h1>{title}</h1>
-      <p>
-        <b>{preview.inviter_name}</b> invited you ({preview.channel}).
-      </p>
-      <p>Status: {preview.status}</p>
-
-      {actionState === 'error' && (
-        <div style={{ marginTop: 12, padding: 12, background: '#fee', border: '1px solid #fbb' }}>
-          Failed: {errorMsg}
-        </div>
-      )}
-
+    <div style={{ padding: 40, color: "#fff", fontFamily: "system-ui", textAlign: "center", minHeight: "100vh", background: "#0a0a0a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <h1 style={{ fontSize: 28, marginBottom: 8 }}>You got an invite!</h1>
+      <p style={{ color: "#888", marginBottom: 32 }}>{status}</p>
       <button
-        onClick={onAccept}
-        disabled={actionState === 'loading'}
-        style={{ marginTop: 12, padding: '10px 14px' }}
+        onClick={acceptInvite}
+        style={{ padding: "14px 32px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 10, fontSize: 16, fontWeight: 600, cursor: "pointer" }}
       >
-        {actionState === 'loading' ? 'Accepting…' : 'Accept Invite'}
+        Accept Invite
       </button>
     </div>
   );

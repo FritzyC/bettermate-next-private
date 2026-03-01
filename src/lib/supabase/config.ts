@@ -19,3 +19,5 @@ export function getSiteUrl(): string {
 export function safeKeyPrefix(key: string): string {
   return key ? key.slice(0, 8) : "";
 }
+
+export const getSupabaseKey = getSupabaseAnonKey;

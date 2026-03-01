@@ -56,8 +56,8 @@ export async function logBehavior(
     }
 
     // Server path: direct upsert
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const client = getServerSupabase();
+    const { getServerSupabaseClient } = await import("@/lib/supabase/server");
+    const client = await getServerSupabaseClient();
     if (!client) return;
 
     await client.from("behavior_events").upsert(

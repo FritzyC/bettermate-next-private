@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { getSupabase } from '@/lib/supabaseClient';
 
-export function AuthClient(): JSX.Element {
+export function AuthClient(): React.ReactElement {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');

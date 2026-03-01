@@ -14,5 +14,5 @@ export default async function InvitePage({
 }) {
   const { code } = await params;
   const token = normalizeInviteToken(code);
-  return <InviteClientShell token={token} />;
+  return <InviteClientShell code={token} />;
 }

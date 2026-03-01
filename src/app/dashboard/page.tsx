@@ -2,47 +2,38 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import { getSupabase } from '@/lib/supabaseClient';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
+    const supabase = getSupabase();
+    if (!supabase) { router.replace('/auth'); return; }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { router.replace('/auth?next=/dashboard'); return; }
       setUser(session.user);
       setLoading(false);
-    };
-
-    checkAuth();
+    });
   }, [router]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
-  };
-
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#fff', fontFamily: 'system-ui', background: '#0a0a0a' }}>
+      Loading...
+    </div>
+  );
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6">Welcome!</h1>
-        <p className="text-lg mb-4">Email: {user?.email}</p>
-        <button
-          onClick={handleLogout}
-          className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600"
-        >
-          Logout
-        </button>
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui', padding: '40px 24px' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto' }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Dashboard</h1>
+        <p style={{ color: '#888' }}>{user?.email}</p>
+        <div style={{ marginTop: 32, display: 'flex', gap: 16 }}>
+          <a href="/matches" style={{ padding: '12px 24px', background: '#6366f1', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>View Matches</a>
+          <a href="/invite/create" style={{ padding: '12px 24px', background: '#1a1a1a', color: '#fff', borderRadius: 8, textDecoration: 'none', border: '1px solid #333' }}>Create Invite</a>
+        </div>
       </div>
     </div>
   );

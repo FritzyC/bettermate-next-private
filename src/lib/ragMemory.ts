@@ -26,8 +26,8 @@ export async function upsertMemoryItem(
   sourceEventIds: string[] = []
 ): Promise<MemoryItem | null> {
   try {
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const client = getServerSupabase();
+    const { getServerSupabaseClient } = await import("@/lib/supabase/server");
+    const client = await getServerSupabaseClient();
     if (!client) return null;
 
     const now = new Date().toISOString();
@@ -67,8 +67,8 @@ export async function upsertMemoryItem(
  */
 export async function deriveInviteMemory(userId: string): Promise<void> {
   try {
-    const { getServerSupabase } = await import("@/lib/supabase/server");
-    const client = getServerSupabase();
+    const { getServerSupabaseClient } = await import("@/lib/supabase/server");
+    const client = await getServerSupabaseClient();
     if (!client) return;
 
     const { data: events, error } = await client

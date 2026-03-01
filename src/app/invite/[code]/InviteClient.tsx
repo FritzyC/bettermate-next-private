@@ -15,5 +15,5 @@ export default function InviteClient(props: { code?: string; token?: string }) {
     );
   }
 
-  return <InviteClientShell token={token} />;
+  return <InviteClientShell code={token} />;
 }
