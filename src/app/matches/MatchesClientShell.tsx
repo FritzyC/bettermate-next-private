@@ -14,9 +14,15 @@ export default function MatchesClientShell() {
     const supabase = getSupabase();
     if (!supabase) { router.replace('/auth?next=/matches'); return; }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.replace('/auth?next=/matches'); return; }
       setUserEmail(session.user.email ?? null);
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('onboarding_done')
+        .eq('id', session.user.id)
+        .single();
+      if (!profile?.onboarding_done) { router.replace('/onboarding'); return; }
       supabase
         .from('matches')
         .select('*')
