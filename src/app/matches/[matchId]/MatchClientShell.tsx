@@ -1,20 +1,20 @@
+cat > "src/app/matches/[matchId]/MatchClientShell.tsx" <<'EOF'
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
+import { getSupabase } from '@/lib/supabaseClient';
 
 type MatchRow = {
   id: string;
+  status: string | null;
   user_a_id: string | null;
   user_b_id: string | null;
   invite_id: string | null;
-  status: string | null;
-  created_at?: string | null;
 };
 
-type MessageRow = {
+type MsgRow = {
   id: string;
   match_id: string;
   sender_user_id: string;
@@ -22,173 +22,74 @@ type MessageRow = {
   created_at: string;
 };
 
-function getAccessTokenFromLocalStorage(): string | null {
-  try {
-    const preferred = 'sb-ukxraiiwgiroiqxtyiml-auth-token';
-    const preferredRaw = localStorage.getItem(preferred);
-    if (preferredRaw) {
-      const parsed = JSON.parse(preferredRaw);
-      const sess =
-        parsed?.session ||
-        parsed?.currentSession ||
-        parsed?.data?.session ||
-        (parsed?.access_token ? parsed : null);
-      if (typeof sess?.access_token === 'string') return sess.access_token;
-    }
-
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!k || !k.includes('auth-token')) continue;
-      const raw = localStorage.getItem(k);
-      if (!raw) continue;
-
-      let parsed: any = null;
-      try {
-        parsed = JSON.parse(raw);
-      } catch {
-        continue;
-      }
-
-      const sess =
-        parsed?.session ||
-        parsed?.currentSession ||
-        parsed?.data?.session ||
-        (parsed?.access_token ? parsed : null);
-
-      if (typeof sess?.access_token === 'string') return sess.access_token;
-    }
-  } catch {
-    // ignore
-  }
-  return null;
-}
-
-export default function MatchClientShell({ matchId }: { matchId: string }) {
+export default function MatchClientShell(props: { matchId?: string; params?: { matchId?: string } }) {
   const router = useRouter();
-  const listRef = useRef<HTMLDivElement | null>(null);
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const publicKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    '';
-
-  const nextUrl = useMemo(() => `/matches/${encodeURIComponent(matchId)}`, [matchId]);
+  const matchId = props.matchId ?? props.params?.matchId ?? '';
+  const safeNext = useMemo(() => `/matches/${encodeURIComponent(matchId)}`, [matchId]);
 
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState<string>('');
+  const [rtState, setRtState] = useState<'idle' | 'subscribed' | 'error'>('idle');
+  const [err, setErr] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
   const [match, setMatch] = useState<MatchRow | null>(null);
-
-  const [userId, setUserId] = useState<string>('');
-  const [messages, setMessages] = useState<MessageRow[]>([]);
-  const [msgBody, setMsgBody] = useState('');
+  const [msgs, setMsgs] = useState<MsgRow[]>([]);
+  const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
-  const [msgErr, setMsgErr] = useState('');
-  const [rtStatus, setRtStatus] = useState<'off' | 'connecting' | 'subscribed' | 'polling' | 'error'>('off');
 
-  // Keep client loosely typed to avoid TS "never" table inference during build.
-  const [client, setClient] = useState<any>(null);
-
-  function scrollToBottom() {
-    const el = listRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }
-
-  function mergeMessages(next: MessageRow[]) {
-    const map = new Map<string, MessageRow>();
-    for (const m of next) map.set(m.id, m);
-    setMessages((prev) => {
-      for (const m of prev) map.set(m.id, m);
-      const merged = Array.from(map.values());
-      merged.sort((a, b) => a.created_at.localeCompare(b.created_at));
-      return merged;
-    });
-    setTimeout(scrollToBottom, 0);
-  }
-
-  function addMessage(m: MessageRow) {
-    setMessages((prev) => {
-      if (prev.some((x) => x.id === m.id)) return prev;
-      const next = [...prev, m];
-      next.sort((a, b) => a.created_at.localeCompare(b.created_at));
-      return next;
-    });
-    setTimeout(scrollToBottom, 0);
-  }
+  const supabaseRef = useRef<ReturnType<typeof getSupabase> | null>(null);
 
   useEffect(() => {
     let alive = true;
-    let cleanupRealtime: null | (() => void) = null;
-    let pollTimer: any = null;
 
     (async () => {
       setLoading(true);
       setErr('');
-      setMsgErr('');
-      setRtStatus('off');
+      setRtState('idle');
 
-      if (!supabaseUrl || !publicKey) {
-        setErr('missing_supabase_public_env');
-        setLoading(false);
-        return;
-      }
-
-      const accessToken = getAccessTokenFromLocalStorage();
-      if (!accessToken) {
-        router.push(`/auth?next=${encodeURIComponent(nextUrl)}`);
-        return;
-      }
-
-      const c = createClient(supabaseUrl, publicKey, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-        global: { headers: { Authorization: `Bearer ${accessToken}` } },
-      });
-
-      // Best-effort realtime auth (does not affect postgrest queries)
       try {
-        c.realtime.setAuth(accessToken);
-      } catch {}
+        if (!matchId) {
+          setErr('missing_match_id');
+          setLoading(false);
+          return;
+        }
 
-      // Validate user via explicit token
-      const { data: u, error: uErr } = await c.auth.getUser(accessToken);
-      const user = u?.user;
+        const supabase = getSupabase();
+        supabaseRef.current = supabase;
 
-      if (uErr || !user?.id) {
-        router.push(`/auth?next=${encodeURIComponent(nextUrl)}`);
-        return;
-      }
+        if (!supabase) {
+          setErr('supabase_not_ready');
+          setLoading(false);
+          return;
+        }
 
-      if (!alive) return;
+        const { data: u, error: uErr } = await supabase.auth.getUser();
+        const uid = u?.user?.id ?? null;
 
-      setClient(c as any);
-      setUserId(user.id);
+        if (uErr || !uid) {
+          router.push(`/auth?next=${encodeURIComponent(safeNext)}`);
+          return;
+        }
 
-      const { data: row, error: matchErr } = await c
-        .from('matches')
-        .select('id,user_a_id,user_b_id,invite_id,status,created_at')
-        .eq('id', matchId)
-        .maybeSingle();
+        if (!alive) return;
+        setUserId(uid);
 
-      if (!alive) return;
+        const { data: m, error: mErr } = await supabase
+          .from('matches')
+          .select('id,status,user_a_id,user_b_id,invite_id')
+          .eq('id', matchId)
+          .single();
 
-      if (matchErr) {
-        setErr(matchErr.message || 'match_fetch_error');
-        setMatch(null);
-        setLoading(false);
-        return;
-      }
-      if (!row) {
-        setErr('match_not_found_or_rls');
-        setMatch(null);
-        setLoading(false);
-        return;
-      }
+        if (!alive) return;
 
-      setMatch(row as MatchRow);
+        if (mErr) {
+          setErr(mErr.message);
+          setMatch(null);
+        } else {
+          setMatch(m as any as MatchRow);
+        }
 
-      const fetchMessages = async () => {
-        const { data: msgs, error: msgsErr } = await (c as any)
+        const { data: initial, error: msgErr } = await supabase
           .from('messages')
           .select('id,match_id,sender_user_id,body,created_at')
           .eq('match_id', matchId)
@@ -196,211 +97,172 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
         if (!alive) return;
 
-        if (msgsErr) {
-          setMsgErr(msgsErr.message || 'messages_fetch_error');
-          return;
+        if (msgErr) {
+          setErr((prev) => prev || msgErr.message);
+          setMsgs([]);
+        } else {
+          setMsgs((initial as any[]) as MsgRow[]);
         }
-        mergeMessages((msgs || []) as MessageRow[]);
-      };
 
-      await fetchMessages();
-
-      // Best-effort behavior log: match open
-      try {
-        const dedup_key = `match_open:${user.id}:${matchId}`;
-        await c.from('behavior_events').insert({
-          dedup_key,
-          event_type: 'match_open',
-          source: 'page',
-          created_at: new Date().toISOString(),
-          user_id: user.id,
-          match_id: matchId,
-          metadata: { path: nextUrl },
-        });
-      } catch {}
-
-      setLoading(false);
-
-      // Poll fallback (works even if realtime fails)
-      setRtStatus('polling');
-      pollTimer = setInterval(fetchMessages, 2500);
-
-      // Realtime subscription (best-effort; stop polling if subscribed)
-      try {
-        setRtStatus('connecting');
-        const channel = c
-          .channel(`messages:${matchId}`)
-          .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
-            (payload) => {
-              const m = payload.new as MessageRow;
-              addMessage(m);
-            }
-          )
-          .subscribe((status) => {
-            if (!alive) return;
-            if (status === 'SUBSCRIBED') {
-              setRtStatus('subscribed');
-              if (pollTimer) {
-                clearInterval(pollTimer);
-                pollTimer = null;
+        try {
+          const channel = supabase
+            .channel(`messages:${matchId}`)
+            .on(
+              'postgres_changes',
+              { event: 'INSERT', schema: 'public', table: 'messages', filter: `match_id=eq.${matchId}` },
+              (payload: any) => {
+                const row = payload?.new as MsgRow;
+                if (!row?.id) return;
+                setMsgs((prev) => {
+                  if (prev.some((x) => x.id === row.id)) return prev;
+                  return [...prev, row].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+                });
               }
-            }
-          });
+            )
+            .subscribe((status) => {
+              if (status === 'SUBSCRIBED') setRtState('subscribed');
+            });
 
-        cleanupRealtime = () => {
-          try {
-            c.removeChannel(channel);
-          } catch {}
-        };
-      } catch {
-        setRtStatus('polling');
+          if (!alive) {
+            supabase.removeChannel(channel);
+            return;
+          }
+        } catch {
+          setRtState('error');
+        }
+      } catch (e: any) {
+        if (!alive) return;
+        setErr(e?.message ?? 'load_failed');
+      } finally {
+        if (alive) setLoading(false);
       }
     })();
 
     return () => {
       alive = false;
-      if (cleanupRealtime) cleanupRealtime();
-      if (pollTimer) clearInterval(pollTimer);
+      try {
+        const s = supabaseRef.current;
+        if (s && matchId) {
+          s.getChannels()
+            .filter((c: any) => String(c?.topic ?? '').includes(`messages:${matchId}`))
+            .forEach((c: any) => s.removeChannel(c));
+        }
+      } catch {}
     };
-  }, [matchId, nextUrl, router, supabaseUrl, publicKey]);
+  }, [router, matchId, safeNext]);
 
   async function onSend() {
-    setMsgErr('');
-    if (!client) return;
-    if (!msgBody.trim()) return;
+    const text = body.trim();
+    if (!text) return;
+    if (!userId) {
+      router.push(`/auth?next=${encodeURIComponent(safeNext)}`);
+      return;
+    }
+
+    const supabase = supabaseRef.current ?? getSupabase();
+    if (!supabase) {
+      setErr('supabase_not_ready');
+      return;
+    }
 
     setSending(true);
-    try {
-      const body = msgBody.trim();
-      setMsgBody('');
+    setErr('');
 
-      const { data: inserted, error } = await (client as any)
-        .from('messages')
-        .insert({
-          match_id: matchId,
-          sender_user_id: userId,
-          body,
-        })
-        .select('id,match_id,sender_user_id,body,created_at')
-        .single();
+    try {
+      const { error } = await supabase.from('messages').insert({
+        match_id: matchId,
+        sender_user_id: userId,
+        body: text,
+      });
 
       if (error) {
-        setMsgErr(error.message || 'send_failed');
-        setMsgBody(body);
+        setErr(error.message);
         return;
       }
 
-      if (inserted) addMessage(inserted as MessageRow);
-
-      // Best-effort behavior event (dedup by message id)
-      try {
-        const msgId = (inserted as any)?.id || 'unknown';
-        const dedup_key = `message_send:${userId}:${msgId}`;
-        await (client as any).from('behavior_events').insert({
-          dedup_key,
-          event_type: 'message_send',
-          source: 'page',
-          created_at: new Date().toISOString(),
-          user_id: userId,
-          match_id: matchId,
-          message_id: msgId,
-          metadata: { len: body.length },
-        });
-      } catch {}
+      setBody('');
+    } catch (e: any) {
+      setErr(e?.message ?? 'send_failed');
     } finally {
       setSending(false);
     }
   }
 
   return (
-    <div style={{ padding: 24, fontFamily: 'system-ui', maxWidth: 900 }}>
+    <main style={{ padding: 24, fontFamily: 'system-ui', maxWidth: 900 }}>
       <h1>BetterMate</h1>
 
       <div style={{ marginBottom: 12 }}>
         <Link href="/">Home</Link>
         <span style={{ margin: '0 8px' }}>·</span>
         <Link href="/debug/bm">Debug</Link>
+        <span style={{ margin: '0 8px' }}>·</span>
+        <Link href="/matches">Matches</Link>
       </div>
 
-      <div style={{ marginBottom: 12 }}>
-        <b>Match:</b> {matchId}
-      </div>
-
-      {loading && <div>Loading match…</div>}
-
-      {!loading && err && (
-        <div style={{ marginTop: 12, padding: 12, background: '#fee', border: '1px solid #fbb' }}>
-          Error: {err}
-        </div>
-      )}
-
-      {!loading && !err && match && (
+      {loading ? (
+        <div>Loading…</div>
+      ) : (
         <>
-          <div style={{ marginTop: 12, padding: 12, border: '1px solid #ddd', borderRadius: 8 }}>
-            <div>
-              <b>Status:</b> {match.status ?? '(null)'}
+          {err && (
+            <div style={{ marginTop: 10, padding: 10, background: '#fee', border: '1px solid #fbb' }}>
+              Error: {err}
             </div>
-            <div>
-              <b>User A:</b> {match.user_a_id ?? '(null)'}
-            </div>
-            <div>
-              <b>User B:</b> {match.user_b_id ?? '(null)'}
-            </div>
-            <div>
-              <b>Invite ID:</b> {match.invite_id ?? '(null)'}
-            </div>
-          </div>
+          )}
 
-          <div style={{ marginTop: 16, padding: 12, border: '1px solid #ddd', borderRadius: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div style={{ fontWeight: 700 }}>Chat</div>
-              <div style={{ fontSize: 12, opacity: 0.7 }}>Realtime: {rtStatus}</div>
+          <section style={{ padding: 14, border: '1px solid #ddd', borderRadius: 10 }}>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>Match: {matchId}</div>
+            <div>Status: {match?.status ?? 'unknown'}</div>
+            <div>User A: {match?.user_a_id ?? '(unknown)'}</div>
+            <div>User B: {match?.user_b_id ?? '(unknown)'}</div>
+            <div>Invite ID: {match?.invite_id ?? '(none)'}</div>
+          </section>
+
+          <section style={{ marginTop: 14, padding: 14, border: '1px solid #ddd', borderRadius: 10 }}>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>Chat</div>
+            <div style={{ color: '#555', marginBottom: 10 }}>
+              Realtime: {rtState === 'subscribed' ? 'subscribed' : rtState === 'error' ? 'error' : 'idle'}
             </div>
 
-            {msgErr && (
-              <div style={{ marginBottom: 10, padding: 10, background: '#fee', border: '1px solid #fbb' }}>
-                Message error: {msgErr}
-              </div>
-            )}
-
-            <div ref={listRef} style={{ maxHeight: 320, overflow: 'auto', border: '1px solid #eee', padding: 10 }}>
-              {messages.length === 0 ? (
-                <div style={{ opacity: 0.7 }}>No messages yet.</div>
+            <div style={{ border: '1px solid #eee', borderRadius: 10, padding: 10, maxHeight: 320, overflow: 'auto' }}>
+              {msgs.length === 0 ? (
+                <div style={{ color: '#666' }}>No messages yet.</div>
               ) : (
-                messages.map((m) => (
-                  <div key={m.id} style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 12, opacity: 0.7 }}>
-                      {m.sender_user_id === userId ? 'You' : m.sender_user_id} ·{' '}
-                      {new Date(m.created_at).toLocaleString()}
+                msgs.map((m) => {
+                  const mine = userId && m.sender_user_id === userId;
+                  const who = mine ? 'You' : 'Them';
+                  const when = m.created_at ? new Date(m.created_at).toLocaleString() : '';
+                  return (
+                    <div key={m.id} style={{ padding: '8px 0', borderBottom: '1px solid #f3f3f3' }}>
+                      <div style={{ fontSize: 12, color: '#666' }}>
+                        <b>{who}</b> · {when}
+                      </div>
+                      <div style={{ whiteSpace: 'pre-wrap' }}>{m.body}</div>
                     </div>
-                    <div style={{ whiteSpace: 'pre-wrap' }}>{m.body}</div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
               <input
-                value={msgBody}
-                onChange={(e) => setMsgBody(e.target.value)}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
                 placeholder="Type a message…"
-                style={{ flex: 1, padding: 10 }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    onSend();
-                  }
-                }}
+                style={{ flex: 1, padding: 10, border: '1px solid #ccc', borderRadius: 8 }}
               />
-              <button onClick={onSend} disabled={sending || !msgBody.trim()} style={{ padding: '10px 14px' }}>
+              <button
+                onClick={onSend}
+                disabled={sending}
+                style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #333' }}
+              >
                 {sending ? 'Sending…' : 'Send'}
               </button>
             </div>
-          </div>
+          </section>
         </>
       )}
-    </div>
+    </main>
   );
 }
+EOF

@@ -1,50 +1,42 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-function safeOrigin(url: string): string {
-  try {
-    return url ? new URL(url).origin : "";
-  } catch {
-    return "";
-  }
-}
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const origin = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    "";
 
-export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-  const origin = safeOrigin(supabaseUrl);
+  const url = origin ? `${origin.replace(/\/+$/, "")}/auth/v1/health` : "";
 
-  if (!origin || !anonKey) {
-    res.status(500).json({
+  if (!url || !key) {
+    return res.status(500).json({
       ok: false,
-      error: "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY",
-      origin,
-      hasAnonKey: Boolean(anonKey),
+      error: "Missing NEXT_PUBLIC_SUPABASE_URL or key",
+      hasUrl: Boolean(origin),
+      hasKey: Boolean(key),
     });
-    return;
   }
 
   try {
-    const r = await fetch(`${origin}/auth/v1/health`, {
-      method: "GET",
+    const r = await fetch(url, {
       headers: {
-        apikey: anonKey,
-        authorization: `Bearer ${anonKey}`,
+        apikey: key,
       },
     });
+    const body = await r.text();
 
-    const text = await r.text();
-
-    res.status(200).json({
+    return res.status(200).json({
       ok: r.ok,
       status: r.status,
       statusText: r.statusText,
-      body: text.slice(0, 1500),
+      body,
       origin,
     });
   } catch (e: any) {
-    res.status(200).json({
+    return res.status(200).json({
       ok: false,
-      error: e?.message ? String(e.message) : String(e),
+      error: String(e?.message ?? e),
       origin,
     });
   }

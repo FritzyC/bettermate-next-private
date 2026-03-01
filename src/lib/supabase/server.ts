@@ -1,18 +1,32 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { getSupabaseKey, getSupabaseUrl } from "./config";
 
-/**
- * Returns a Supabase client authenticated with the service-role key for
- * server-side operations (e.g. best-effort behavior event inserts).
- *
- * Returns null when required env vars are absent so callers can bail safely.
- */
-export function getServerSupabase(): SupabaseClient | null {
-  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
-  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+export async function getServerSupabaseClient() {
+  const url = getSupabaseUrl();
+  const key = getSupabaseKey();
 
-  if (!url || !serviceKey) return null;
+  if (!url || !key) {
+    // No throw: keep server stable; caller should handle.
+    return null;
+  }
 
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  const cookieStore = await cookies();
+
+  return createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // Server Component context can disallow set; ignore safely.
+        }
+      },
+    },
   });
 }
