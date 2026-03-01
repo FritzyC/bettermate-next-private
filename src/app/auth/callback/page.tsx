@@ -2,7 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabaseClient';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 type BehaviorEventInsert = {
   dedup_key: string;
@@ -16,29 +17,7 @@ type BehaviorEventInsert = {
 };
 
 const BEHAVIOR_QUEUE_KEY = 'bm_behavior_queue_v1';
-const GLOBAL_SUPABASE_KEY = '__bm_supabase_browser_singleton__';
 
-function getSupabase(): SupabaseClient {
-  const g = globalThis as any;
-  if (g[GLOBAL_SUPABASE_KEY]) return g[GLOBAL_SUPABASE_KEY];
-
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anon) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
-  }
-
-  g[GLOBAL_SUPABASE_KEY] = createClient(url, anon, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: false,
-    },
-  });
-
-  return g[GLOBAL_SUPABASE_KEY];
-}
 
 function sanitizeNext(raw: string | null): string {
   if (!raw) return '/matches';
