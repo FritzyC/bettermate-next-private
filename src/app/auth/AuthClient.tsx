@@ -1,464 +1,143 @@
-"use client";
 
-import React, { useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { getSupabase } from "@/lib/supabaseClient";
-import { bmTrackAndFlush } from "@/lib/bm";
+'use client';
 
-export const AUTH_CLIENT_RENDER = "v5";
-const EXPECTED_AUTH_CLIENT_RENDER = "v5";
+import { useState, useEffect } from 'react';
+import { getSupabase } from '@/lib/supabaseClient';
 
-function safeTrim(v: string | null | undefined) {
-  return (v ?? "").trim();
-}
+export function AuthClient(): JSX.Element {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [checkingSession, setCheckingSession] = useState(true);
 
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
-}
-
-export default function AuthClient() {
-  const router = useRouter();
-  const sp = useSearchParams();
-
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState("");
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-
-  const inboundError = safeTrim(sp?.get("error"));
-  const inboundMsg = safeTrim(sp?.get("msg"));
-  const inboundErrorDesc = safeTrim(sp?.get("error_description"));
-
-  const origin = useMemo(() => {
-    if (typeof window === "undefined") return "";
-    return window.location.origin;
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) { setCheckingSession(false); return; }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) window.location.href = '/matches';
+      else setCheckingSession(false);
+    });
   }, []);
 
-  const callbackUrl = useMemo(() => {
-    if (!origin) return "";
-    return `${origin}/auth/callback`;
-  }, [origin]);
-
-  const envOk = Boolean(supabaseUrl && anonKey);
-
-  async function continueWithGoogle() {
-    setBusy(true);
-    setStatus("");
-    try {
-      const supabase = getSupabase();
-      if (!supabase) {
-        setStatus("Failed: supabase_client_missing");
-
-        await bmTrackAndFlush({
-          event_type: "auth.oauth_start_failed",
-          source: "page:/auth",
-          metadata: { reason: "supabase_client_missing" },
-        }).catch(() => {});
-
-        return;
-      }
-      if (!callbackUrl) {
-        setStatus("Failed: callbackUrl_missing");
-
-        await bmTrackAndFlush({
-          event_type: "auth.oauth_start_failed",
-          source: "page:/auth",
-          metadata: { reason: "callbackUrl_missing" },
-        }).catch(() => {});
-
-        return;
-      }
-
-      await bmTrackAndFlush({
-        event_type: "auth.oauth_start",
-        source: "page:/auth",
-        metadata: { provider: "google" },
-      }).catch(() => {});
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: callbackUrl,
-        },
-      });
-
-      if (error) {
-        setStatus(`Failed: ${error.message}`);
-
-        await bmTrackAndFlush({
-          event_type: "auth.oauth_start_failed",
-          source: "page:/auth",
-          metadata: { reason: error.message },
-        }).catch(() => {});
-      }
-    } catch (error: unknown) {
-      const msg = getErrorMessage(error);
-      setStatus(`Failed: ${msg}`);
-
-      await bmTrackAndFlush({
-        event_type: "auth.oauth_start_failed",
-        source: "page:/auth",
-        metadata: { reason: msg },
-      }).catch(() => {});
-    } finally {
-      setBusy(false);
+  async function handleGoogleLogin() {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=/matches`,
+      },
+    });
+    if (error) {
+      setMessage(error.message);
+      setLoading(false);
     }
   }
 
-  async function sendEmail() {
-    setBusy(true);
-    setStatus("");
-    try {
-      const supabase = getSupabase();
-      if (!supabase) {
-        setStatus("Failed: supabase_client_missing");
-
-        await bmTrackAndFlush({
-          event_type: "auth.otp_send_failed",
-          source: "page:/auth",
-          metadata: { reason: "supabase_client_missing" },
-        }).catch(() => {});
-
-        return;
-      }
-      if (!callbackUrl) {
-        setStatus("Failed: callbackUrl_missing");
-
-        await bmTrackAndFlush({
-          event_type: "auth.otp_send_failed",
-          source: "page:/auth",
-          metadata: { reason: "callbackUrl_missing" },
-        }).catch(() => {});
-
-        return;
-      }
-
-      const clean = email.trim();
-      if (!clean) {
-        setStatus("Failed: missing_email");
-        return;
-      }
-
-      await bmTrackAndFlush({
-        event_type: "auth.otp_send_attempt",
-        source: "page:/auth",
-        user_email: clean,
-        metadata: {},
-      }).catch(() => {});
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email: clean,
-        options: { emailRedirectTo: callbackUrl },
-      });
-
-      if (error) {
-        setStatus(`Failed: ${error.message}`);
-
-        await bmTrackAndFlush({
-          event_type: "auth.otp_send_failed",
-          source: "page:/auth",
-          user_email: clean,
-          metadata: { reason: error.message },
-        }).catch(() => {});
-      } else {
-        setStatus("Email sent. Use OTP box if the link does not open.");
-
-        await bmTrackAndFlush({
-          event_type: "auth.otp_send_success",
-          source: "page:/auth",
-          user_email: clean,
-          metadata: {},
-        }).catch(() => {});
-      }
-    } catch (error: unknown) {
-      const msg = getErrorMessage(error);
-      setStatus(`Failed: ${msg}`);
-
-      await bmTrackAndFlush({
-        event_type: "auth.otp_send_failed",
-        source: "page:/auth",
-        metadata: { reason: msg },
-      }).catch(() => {});
-    } finally {
-      setBusy(false);
+  async function handleEmailOTP(e: React.FormEvent) {
+    e.preventDefault();
+    const supabase = getSupabase();
+    if (!supabase || !email) return;
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/matches`,
+      },
+    });
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setMessage('Check your email for a login link.');
     }
+    setLoading(false);
   }
 
-  async function verifyCode() {
-    setBusy(true);
-    setStatus("");
-    try {
-      const supabase = getSupabase();
-      if (!supabase) {
-        setStatus("Failed: supabase_client_missing");
-
-        await bmTrackAndFlush({
-          event_type: "auth.otp_verify_failed",
-          source: "page:/auth",
-          metadata: { reason: "supabase_client_missing" },
-        }).catch(() => {});
-
-        return;
-      }
-
-      const cleanEmail = email.trim();
-      const cleanCode = code.trim();
-
-      if (!cleanEmail) {
-        setStatus("Failed: missing_email");
-        return;
-      }
-      if (!cleanCode) {
-        setStatus("Failed: missing_code");
-        return;
-      }
-
-      await bmTrackAndFlush({
-        event_type: "auth.otp_verify_attempt",
-        source: "page:/auth",
-        user_email: cleanEmail,
-        metadata: {},
-      }).catch(() => {});
-
-      const { error } = await supabase.auth.verifyOtp({
-        email: cleanEmail,
-        token: cleanCode,
-        type: "email",
-      });
-
-      if (error) {
-        setStatus(`Failed: ${error.message}`);
-
-        await bmTrackAndFlush({
-          event_type: "auth.otp_verify_failed",
-          source: "page:/auth",
-          user_email: cleanEmail,
-          metadata: { reason: error.message },
-        }).catch(() => {});
-
-        return;
-      }
-
-      await bmTrackAndFlush({
-        event_type: "auth.otp_verify_success",
-        source: "page:/auth",
-        user_email: cleanEmail,
-        metadata: {},
-      }).catch(() => {});
-
-      router.replace("/matches");
-    } catch (error: unknown) {
-      const msg = getErrorMessage(error);
-      setStatus(`Failed: ${msg}`);
-
-      await bmTrackAndFlush({
-        event_type: "auth.otp_verify_failed",
-        source: "page:/auth",
-        metadata: { reason: msg },
-      }).catch(() => {});
-    } finally {
-      setBusy(false);
-    }
+  if (checkingSession) {
+    return (
+      <main style={{ maxWidth: 400, margin: '80px auto', padding: 24, fontFamily: 'system-ui', color: '#fff' }}>
+        <p>Checking session…</p>
+      </main>
+    );
   }
 
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui", maxWidth: 720 }}>
-      <h1>BetterMate Login</h1>
+    <main style={{
+      maxWidth: 400,
+      margin: '80px auto',
+      padding: 32,
+      fontFamily: 'system-ui',
+      background: '#111',
+      borderRadius: 16,
+      border: '1px solid #222',
+      color: '#fff',
+    }}>
+      <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8 }}>BetterMate</h1>
+      <p style={{ color: '#888', marginBottom: 32 }}>Sign in to continue</p>
 
-      <div style={{ marginBottom: 12 }}>
-        <Link href="/">Home</Link>
-        <span style={{ margin: "0 8px" }}>·</span>
-        <Link href="/debug/bm">Debug</Link>
-      </div>
-
-      <section
-        style={{ padding: 14, border: "1px solid #ddd", borderRadius: 10 }}
-      >
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>Debug</div>
-        <div>AUTH_CLIENT_RENDER={AUTH_CLIENT_RENDER}</div>
-        <div>NEXT_PUBLIC_SUPABASE_URL: {supabaseUrl || "(missing)"}</div>
-        <div>hasAnonKey: {anonKey ? "true" : "false"}</div>
-        <div>anonKeyPrefix: {anonKey ? anonKey.slice(0, 8) : "(missing)"}</div>
-        <div>NEXT_PUBLIC_SITE_URL: {siteUrl || "(missing)"}</div>
-        <div>origin: {origin || "(missing)"}</div>
-        <div>callbackUrl: {callbackUrl || "(missing)"}</div>
-        <div>env: {envOk ? "OK" : "MISSING"}</div>
-
-        {(inboundError || inboundMsg || inboundErrorDesc) && (
-          <div
-            style={{
-              marginTop: 10,
-              padding: 10,
-              background: "#fee",
-              border: "1px solid #fbb",
-            }}
-          >
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>Inbound</div>
-            {inboundError && <div>error: {inboundError}</div>}
-            {inboundErrorDesc && <div>error_description: {inboundErrorDesc}</div>}
-            {inboundMsg && <div>msg: {inboundMsg}</div>}
-          </div>
-        )}
-      </section>
-
-      {AUTH_CLIENT_RENDER !== EXPECTED_AUTH_CLIENT_RENDER && (
-        <section
-          style={{
-            marginTop: 16,
-            padding: 14,
-            border: "2px solid #ff6b6b",
-            background: "#ffe0e0",
-            borderRadius: 10,
-          }}
-        >
-          <div style={{ fontWeight: 700, color: "#c92a2a", marginBottom: 8 }}>
-            ⚠️ Stale Deploy Detected
-          </div>
-          <div style={{ color: "#862e2e", fontSize: 14 }}>
-            Running OAuth mode: v{AUTH_CLIENT_RENDER} (expected v
-            {EXPECTED_AUTH_CLIENT_RENDER})
-          </div>
-          <div style={{ color: "#862e2e", fontSize: 13, marginTop: 6 }}>
-            Try refreshing the page with Ctrl+Shift+R (hard refresh) or
-            clearing your browser cache.
-          </div>
-        </section>
-      )}
-
-      <section
+      <button
+        onClick={handleGoogleLogin}
+        disabled={loading}
         style={{
-          marginTop: 16,
-          padding: 14,
-          border: "1px solid #ddd",
-          borderRadius: 10,
+          width: '100%',
+          padding: '12px 0',
+          background: '#fff',
+          color: '#111',
+          border: 'none',
+          borderRadius: 8,
+          fontWeight: 600,
+          fontSize: 16,
+          cursor: 'pointer',
+          marginBottom: 24,
         }}
       >
-        <div style={{ fontWeight: 700, marginBottom: 10 }}>
-          Fast login (recommended)
-        </div>
+        {loading ? 'Redirecting…' : 'Continue with Google'}
+      </button>
 
-        <button
-          onClick={continueWithGoogle}
-          disabled={busy || !envOk}
+      <div style={{ textAlign: 'center', color: '#555', marginBottom: 24 }}>or</div>
+
+      <form onSubmit={handleEmailOTP}>
+        <input
+          type="email"
+          placeholder="your@email.com"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          required
           style={{
-            padding: "10px 14px",
+            width: '100%',
+            padding: '12px 16px',
+            background: '#1a1a1a',
+            border: '1px solid #333',
             borderRadius: 8,
-            border: "1px solid #333",
-            width: "100%",
+            color: '#fff',
+            fontSize: 16,
+            marginBottom: 12,
+            boxSizing: 'border-box',
+          }}
+        />
+        <button
+          type="submit"
+          disabled={loading || !email}
+          style={{
+            width: '100%',
+            padding: '12px 0',
+            background: '#6366f1',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 8,
             fontWeight: 600,
+            fontSize: 16,
+            cursor: 'pointer',
           }}
         >
-          {busy ? "Working…" : "Continue with Google"}
+          {loading ? 'Sending…' : 'Send Magic Link'}
         </button>
+      </form>
 
-        <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #eee" }}>
-          <div style={{ fontWeight: 700, marginBottom: 10 }}>
-            Email OTP (may rate-limit)
-          </div>
-
-          <label
-            htmlFor="bm_email"
-            style={{ display: "block", fontWeight: 600, marginBottom: 6 }}
-          >
-            Email
-          </label>
-          <input
-            id="bm_email"
-            name="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            style={{
-              width: "100%",
-              padding: 10,
-              border: "1px solid #ccc",
-              borderRadius: 8,
-            }}
-          />
-
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 12,
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              onClick={sendEmail}
-              disabled={busy || !envOk}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 8,
-                border: "1px solid #333",
-              }}
-            >
-              Send email
-            </button>
-          </div>
-
-          <div style={{ marginTop: 18, paddingTop: 12, borderTop: "1px solid #eee" }}>
-            <label
-              htmlFor="bm_otp"
-              style={{ display: "block", fontWeight: 600, marginBottom: 6 }}
-            >
-              OTP code (use this if links don&apos;t open)
-            </label>
-            <input
-              id="bm_otp"
-              name="otp"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              placeholder="Enter code from email"
-              style={{
-                width: "100%",
-                padding: 10,
-                border: "1px solid #ccc",
-                borderRadius: 8,
-              }}
-            />
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                marginTop: 12,
-                flexWrap: "wrap",
-              }}
-            >
-              <button
-                onClick={verifyCode}
-                disabled={busy || !envOk}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 8,
-                  border: "1px solid #333",
-                }}
-              >
-                Verify OTP & Sign in
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {status && (
-          <p
-            style={{
-              marginTop: 12,
-              color: status.toLowerCase().includes("failed")
-                ? "#b00020"
-                : "#222",
-            }}
-          >
-            {status}
-          </p>
-        )}
-      </section>
+      {message && (
+        <p style={{ marginTop: 16, color: '#6366f1', textAlign: 'center' }}>{message}</p>
+      )}
     </main>
   );
 }
