@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabaseClient';
+import CompatibilitySnapshot from '@/components/CompatibilitySnapshot';
 
 export default function MatchClientShell({ params }: { params: { matchId: string } }) {
   const router = useRouter();
@@ -71,6 +72,7 @@ export default function MatchClientShell({ params }: { params: { matchId: string
         <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Match #{params.matchId.slice(0, 8)}</h1>
       </div>
 
+      <CompatibilitySnapshot matchId={params.matchId} />
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {messages.length === 0 ? (
           <p style={{ color: '#555', textAlign: 'center', marginTop: 40 }}>No messages yet. Say hello!</p>
