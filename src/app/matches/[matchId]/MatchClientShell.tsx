@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabaseClient';
 import CompatibilitySnapshot from '@/components/CompatibilitySnapshot';
 
-export default function MatchClientShell({ params }: { params: { matchId: string } }) {
+export default function MatchClientShell({ matchId }: { matchId: string }) {
   const router = useRouter();
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ export default function MatchClientShell({ params }: { params: { matchId: string
       supabase
         .from('messages')
         .select('*')
-        .eq('match_id', params.matchId)
+        .eq('match_id', matchId)
         .order('created_at', { ascending: true })
         .then(({ data }) => {
           if (data) setMessages(data);
@@ -31,12 +31,12 @@ export default function MatchClientShell({ params }: { params: { matchId: string
         });
 
       const channel = supabase
-        .channel(`match-${params.matchId}`)
+        .channel(`match-${matchId}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `match_id=eq.${params.matchId}`,
+          filter: `match_id=eq.${matchId}`,
         }, (payload) => {
           setMessages((prev) => [...prev, payload.new]);
         })
@@ -44,13 +44,13 @@ export default function MatchClientShell({ params }: { params: { matchId: string
 
       return () => { supabase.removeChannel(channel); };
     });
-  }, [router, params.matchId]);
+  }, [router, matchId]);
 
   async function sendMessage() {
     const supabase = getSupabase();
     if (!supabase || !newMessage.trim() || !userId) return;
     const { error } = await supabase.from('messages').insert({
-      match_id: params.matchId,
+      match_id: matchId,
       sender_user_id: userId,
       body: newMessage.trim(),
     });
@@ -69,10 +69,10 @@ export default function MatchClientShell({ params }: { params: { matchId: string
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui' }}>
       <div style={{ padding: '16px 24px', borderBottom: '1px solid #222', display: 'flex', alignItems: 'center', gap: 16 }}>
         <a href="/matches" style={{ color: '#888', textDecoration: 'none' }}>← Back</a>
-        <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Match #{params?.matchId ? String(params.matchId).slice(0, 8) : '...'}</h1>
+        <h1 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>Match #{matchId ? String(matchId).slice(0, 8) : '...'}</h1>
       </div>
 
-      {params?.matchId && <CompatibilitySnapshot matchId={params.matchId} />}
+      {matchId && <CompatibilitySnapshot matchId={matchId} />}
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {messages.length === 0 ? (
           <p style={{ color: '#555', textAlign: 'center', marginTop: 40 }}>No messages yet. Say hello!</p>
