@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { getSupabase } from '@/lib/supabaseClient';
 
 type Dimension = {
   id: string; label: string; icon: string; score: number;
@@ -10,39 +11,43 @@ type SnapshotData = {
   overallScore: number; grade: string; summary: string; dimensions: Dimension[];
 };
 
-function generateSnapshot(matchId: string): SnapshotData {
-  const seed = matchId.split('').reduce((a: number, c: string) => a + c.charCodeAt(0), 0);
-  const rand = (min: number, max: number, offset: number = 0) => {
-    const v = ((seed + offset) * 2654435761) >>> 0;
-    return Math.round(min + (v % ((max - min) * 10)) / 10);
-  };
-  const dims: Dimension[] = [
-    { id: 'trajectory', label: 'Life Trajectory', icon: '◈', score: rand(3, 5, 1),
-      headline: 'Headed in the same direction',
-      detail: 'You both prioritize building something meaningful. That shared drive creates natural momentum and reduces resentment over time.',
-      color: '#c084fc' },
-    { id: 'conflict', label: 'Conflict Style', icon: '◉', score: rand(2, 5, 2),
-      headline: 'Compatible under pressure',
-      detail: 'When friction shows up, you both tend to name it rather than avoid it. That makes repair faster and keeps things from festering.',
-      color: '#f0abca' },
-    { id: 'finance', label: 'Finance Alignment', icon: '◎', score: rand(3, 5, 3),
-      headline: 'Money as a tool, not a scorecard',
-      detail: 'You share a similar relationship with money — neither reckless nor paralyzed. That reduces one of the biggest sources of long-term friction.',
-      color: '#a78bfa' },
-    { id: 'growth', label: 'Growth Orientation', icon: '◐', score: rand(2, 5, 4),
-      headline: 'Both wired to keep moving',
-      detail: "You're both oriented toward growth rather than maintenance. You'll push each other forward without one person feeling dragged along.",
-      color: '#f9a8c9' },
-  ];
-  const avg = dims.reduce((a, d) => a + d.score, 0) / dims.length;
-  const overallScore = Math.round((avg / 5) * 100);
-  const grade = overallScore >= 85 ? 'Exceptional' : overallScore >= 70 ? 'Strong' : overallScore >= 55 ? 'Promising' : 'Developing';
-  const summary = overallScore >= 85
-    ? 'Rare alignment across what actually matters. This deserves your full attention.'
-    : overallScore >= 70 ? 'Solid foundation with real shared values. The friction that exists will make you both better.'
-    : overallScore >= 55 ? "Real potential here. The differences aren't dealbreakers — they're data."
-    : 'Still early. Consistency over time will tell the real story.';
-  return { overallScore, grade, summary, dimensions: dims };
+const DIMENSION_META = [
+  { id: 'trajectory_score', label: 'Life Trajectory', icon: '◈', color: '#c084fc',
+    headlines: ['Different directions', 'Some overlap', 'Aligned paths', 'Strong alignment', 'Rare sync'],
+    details: ['You are heading in different directions right now. Worth exploring openly.',
+      'Some overlap in where you are headed. Worth discussing what matters most.',
+      'You both prioritize building something meaningful. That shared drive reduces friction.',
+      'Strong alignment on life direction. This creates natural momentum together.',
+      'Rare alignment. You are both locked into compatible visions of the future.'] },
+  { id: 'conflict_score', label: 'Conflict Style', icon: '◉', color: '#f0abca',
+    headlines: ['Different approaches', 'Some compatibility', 'Compatible styles', 'Strong compatibility', 'Natural fit'],
+    details: ['You handle conflict very differently. Awareness here will prevent most issues.',
+      'Some differences in conflict style. Naming this early helps.',
+      'When friction shows up, you both tend to address it constructively.',
+      'Strong compatibility under pressure. Repair will come naturally.',
+      'Your conflict styles are a natural fit. Tension will resolve quickly.'] },
+  { id: 'finance_score', label: 'Finance Alignment', icon: '◎', color: '#a78bfa',
+    headlines: ['Different relationships', 'Some tension possible', 'Compatible views', 'Strong alignment', 'Rare match'],
+    details: ['You relate to money differently. This is worth an honest conversation early.',
+      'Some differences in how you see money. Not a dealbreaker with communication.',
+      'You share a similar relationship with money. That reduces long-term friction.',
+      'Strong finance alignment. You will make financial decisions without major conflict.',
+      'Rare alignment. You are both on the same page about money without needing to negotiate it.'] },
+  { id: 'growth_score', label: 'Growth Orientation', icon: '◐', color: '#f9a8c9',
+    headlines: ['Different paces', 'Some mismatch', 'Balanced orientation', 'Strong alignment', 'Both builders'],
+    details: ['You are at different points in your growth orientation. One may feel held back.',
+      'Some difference in how much each of you wants to push forward.',
+      'You balance stability and growth similarly. Neither will feel dragged.',
+      'Strong growth alignment. You will push each other forward naturally.',
+      'You are both builders. Forward motion is a shared value.'] },
+];
+
+function getLevel(diff: number): number {
+  if (diff <= 0.5) return 4;
+  if (diff <= 1) return 3;
+  if (diff <= 2) return 2;
+  if (diff <= 3) return 1;
+  return 0;
 }
 
 function ScoreRing({ score, size = 130 }: { score: number; size?: number }) {
@@ -68,7 +73,7 @@ function PipScore({ score, color }: { score: number; color: string }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} style={{ width: 7, height: 7, borderRadius: '50%',
           background: i < score ? color : '#2a2040',
-          transition: `background 0.3s ease ${i * 80}ms` }} />
+          transition: 'background 0.3s ease ' + (i * 80) + 'ms' }} />
       ))}
     </div>
   );
@@ -77,7 +82,76 @@ function PipScore({ score, color }: { score: number; color: string }) {
 export default function CompatibilitySnapshot({ matchId }: { matchId: string }) {
   const [data, setData] = useState<SnapshotData | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
-  useEffect(() => { const t = setTimeout(() => setData(generateSnapshot(matchId)), 400); return () => clearTimeout(t); }, [matchId]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      const supabase = getSupabase();
+      if (!supabase) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Get match to find both user IDs
+      const { data: match } = await supabase
+        .from('matches')
+        .select('user_a_id, user_b_id')
+        .eq('id', matchId)
+        .single();
+
+      if (!match) { setError('Match not found'); return; }
+
+      const otherUserId = match.user_a_id === session.user.id ? match.user_b_id : match.user_a_id;
+
+      // Get both profiles
+      const { data: myProfile } = await supabase
+        .from('user_profiles')
+        .select('trajectory_score, conflict_score, finance_score, growth_score')
+        .eq('id', session.user.id)
+        .single();
+
+      const { data: theirProfile } = await supabase
+        .from('user_profiles')
+        .select('trajectory_score, conflict_score, finance_score, growth_score')
+        .eq('id', otherUserId)
+        .single();
+
+      // Fall back to mock if profiles not complete
+      const myScores = myProfile || { trajectory_score: 3, conflict_score: 3, finance_score: 3, growth_score: 3 };
+      const theirScores = theirProfile || { trajectory_score: 4, conflict_score: 4, finance_score: 4, growth_score: 4 };
+
+      const dimensions: Dimension[] = DIMENSION_META.map((meta) => {
+        const myVal = (myScores as any)[meta.id] ?? 3;
+        const theirVal = (theirScores as any)[meta.id] ?? 3;
+        const diff = Math.abs(myVal - theirVal);
+        const level = getLevel(diff);
+        const pipScore = 5 - diff;
+        return {
+          id: meta.id,
+          label: meta.label,
+          icon: meta.icon,
+          color: meta.color,
+          score: Math.max(1, Math.round(pipScore)),
+          headline: meta.headlines[level],
+          detail: meta.details[level],
+        };
+      });
+
+      const avg = dimensions.reduce((a, d) => a + d.score, 0) / dimensions.length;
+      const overallScore = Math.round((avg / 5) * 100);
+      const grade = overallScore >= 85 ? 'Exceptional' : overallScore >= 70 ? 'Strong' : overallScore >= 55 ? 'Promising' : 'Developing';
+      const summary = overallScore >= 85
+        ? 'Rare alignment across what actually matters. This deserves your full attention.'
+        : overallScore >= 70 ? 'Solid foundation with real shared values. The friction that exists will make you both better.'
+        : overallScore >= 55 ? 'Real potential here. The differences are not dealbreakers - they are data.'
+        : 'Still early. Consistency over time will tell the real story.';
+
+      setData({ overallScore, grade, summary, dimensions });
+    }
+    load();
+  }, [matchId]);
+
+  if (error) return null;
 
   if (!data) return (
     <div style={{ padding: '32px 24px', color: '#6b5b8a', fontFamily: 'system-ui', display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -87,8 +161,9 @@ export default function CompatibilitySnapshot({ matchId }: { matchId: string }) 
   );
 
   const topColor = data.overallScore >= 70 ? '#c084fc' : '#f0abca';
+
   return (
-    <div style={{ background: 'linear-gradient(160deg,#0e0a1a 0%,#150d24 100%)', border: '1px solid #2a1f45', borderRadius: 20, padding: '28px 24px', fontFamily: "'Georgia',serif", color: '#fff', marginBottom: 24 }}>
+    <div style={{ background: 'linear-gradient(160deg,#0e0a1a 0%,#150d24 100%)', border: '1px solid #2a1f45', borderRadius: 20, padding: '28px 24px', fontFamily: 'Georgia, serif', color: '#fff', marginBottom: 24 }}>
       <div style={{ marginBottom: 24 }}>
         <p style={{ margin: '0 0 4px', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#4a3a6a', fontFamily: 'system-ui' }}>Why This Works</p>
         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 400, color: '#e8d8f8', letterSpacing: '-0.02em' }}>Compatibility Snapshot</h2>
@@ -110,7 +185,7 @@ export default function CompatibilitySnapshot({ matchId }: { matchId: string }) 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
         {data.dimensions.map((d) => (
           <button key={d.id} onClick={() => setExpanded(expanded === d.id ? null : d.id)}
-            style={{ background: expanded === d.id ? 'rgba(192,132,252,0.05)' : '#0e0a1a', border: `1px solid ${expanded === d.id ? d.color + '33' : '#1e1634'}`, borderRadius: 14, padding: '15px 17px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease' }}>
+            style={{ background: expanded === d.id ? 'rgba(192,132,252,0.05)' : '#0e0a1a', border: '1px solid ' + (expanded === d.id ? d.color + '33' : '#1e1634'), borderRadius: 14, padding: '15px 17px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
                 <span style={{ fontSize: 18, color: d.color }}>{d.icon}</span>
