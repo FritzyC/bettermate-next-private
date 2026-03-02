@@ -248,7 +248,7 @@ export default function FingerprintClient() {
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: '#8452B8', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>{q.label}</p>
                 <textarea value={q.value} onChange={e => q.set(e.target.value)}
                   placeholder={q.placeholder} rows={3}
-                  style={{ width: '100%', padding: '13px 16px', background: '#342058', border: '1px solid #5A3A8A', borderRadius: 12, color: '#EDE8F5', fontSize: 14, outline: 'none', resize: 'vertical', lineHeight: 1.6, fontFamily: 'system-ui', boxSizing: 'border-box', placeholderColor: '#7A6A96' }} />
+                  style={{ width: '100%', padding: '13px 16px', background: '#342058', border: '1px solid #5A3A8A', borderRadius: 12, color: '#EDE8F5', fontSize: 14, outline: 'none', resize: 'vertical', lineHeight: 1.6, fontFamily: 'system-ui', boxSizing: 'border-box' }} />
               </div>
             ))}
             <p style={{ margin: 0, fontSize: 11, color: '#3D2860', lineHeight: 1.6, textAlign: 'center' }}>
