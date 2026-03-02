@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabaseClient';
+import { trackEvent } from '@/lib/bm/track';
 import CompatibilitySnapshot from '@/components/CompatibilitySnapshot';
 
 export default function MatchClientShell({ matchId }: { matchId: string }) {
@@ -14,6 +15,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
   useEffect(() => {
     const supabase = getSupabase();
+    trackEvent('match_opened', {}, matchId);
     if (!supabase) { router.replace('/auth'); return; }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -49,7 +51,8 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   async function sendMessage() {
     const supabase = getSupabase();
     if (!supabase || !newMessage.trim() || !userId) return;
-    const { error } = await supabase.from('messages').insert({
+    const { error } = await trackEvent('message_sent', { length: newMessage.trim().length }, matchId);
+    await supabase.from('messages').insert({
       match_id: matchId,
       sender_user_id: userId,
       body: newMessage.trim(),

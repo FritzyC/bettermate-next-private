@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { getSupabase } from '@/lib/supabaseClient';
+import { trackEvent } from '@/lib/bm/track';
 
 type Dimension = {
   id: string; label: string; icon: string; score: number;
@@ -147,6 +148,7 @@ export default function CompatibilitySnapshot({ matchId }: { matchId: string }) 
         : 'Still early. Consistency over time will tell the real story.';
 
       setData({ overallScore, grade, summary, dimensions });
+      trackEvent('snapshot_viewed', { overallScore, grade }, matchId);
     }
     load();
   }, [matchId]);
@@ -184,7 +186,7 @@ export default function CompatibilitySnapshot({ matchId }: { matchId: string }) 
       <p style={{ margin: '0 0 14px', fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#2e2248', fontFamily: 'system-ui' }}>Dimension Breakdown</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
         {data.dimensions.map((d) => (
-          <button key={d.id} onClick={() => setExpanded(expanded === d.id ? null : d.id)}
+          <button key={d.id} onClick={() => { const opening = expanded !== d.id; setExpanded(opening ? d.id : null); if (opening) trackEvent('snapshot_expanded', { dimension: d.id, score: d.score }, matchId); }}
             style={{ background: expanded === d.id ? 'rgba(192,132,252,0.05)' : '#0e0a1a', border: '1px solid ' + (expanded === d.id ? d.color + '33' : '#1e1634'), borderRadius: 14, padding: '15px 17px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabaseClient';
+import { trackEvent } from '@/lib/bm/track';
 
 const QUESTIONS = [
   {
@@ -101,6 +102,7 @@ export default function OnboardingClient() {
       onboarding_done: true,
     });
 
+    await trackEvent('onboarding_completed', { scores: next });
     router.replace('/matches');
   }
 
