@@ -75,7 +75,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   }
 
   if (loading) return (
-    <div style={{ height: '100vh', background: '#0F0A1A', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui' }}>
+    <div style={{ height: '100vh', background: '#1E1035', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 28, marginBottom: 12 }}>✨</div>
         <div style={{ fontSize: 13, color: '#7A6A96' }}>Opening your space...</div>
@@ -84,10 +84,10 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   );
 
   return (
-    <div style={{ height: '100vh', background: '#0F0A1A', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ height: '100vh', background: '#1E1035', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* Header */}
-      <div style={{ flexShrink: 0, padding: '14px 20px', background: '#1C1228', borderBottom: '1px solid #5a1a8a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ flexShrink: 0, padding: '14px 20px', background: '#2A1648', borderBottom: '1px solid #5a1a8a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <a href="/matches" style={{ color: '#7A6A96', textDecoration: 'none', fontSize: 20 }}>←</a>
           <div>
@@ -103,7 +103,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       {/* Snapshot overlay - does not push layout */}
       {showSnapshot && (
-        <div style={{ flexShrink: 0, maxHeight: '42vh', overflowY: 'auto', background: '#0F0A1A', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
+        <div style={{ flexShrink: 0, maxHeight: '42vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
           <CompatibilitySnapshot matchId={matchId} />
         </div>
       )}
@@ -144,12 +144,12 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       {/* Coaching panel */}
       {showCoaching && (
-        <div style={{ flexShrink: 0, maxHeight: '38vh', overflowY: 'auto', background: '#1C1228', borderTop: '1px solid #5a1a8a', padding: '14px 16px' }}>
+        <div style={{ flexShrink: 0, maxHeight: '38vh', overflowY: 'auto', background: '#2A1648', borderTop: '1px solid #5a1a8a', padding: '14px 16px' }}>
           <p style={{ margin: '0 0 10px', fontSize: 10, color: '#7A6A96', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Spark something real</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {COACHING_PROMPTS.map((p, i) => (
               <button key={i} onClick={() => { setNewMessage(p.message); setCoachingHint(p.why); setShowCoaching(false); }}
-                style={{ background: '#261A36', border: '1px solid #3D2860', borderRadius: 10, padding: '11px 13px', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 10 }}>
+                style={{ background: '#342058', border: '1px solid #3D2860', borderRadius: 10, padding: '11px 13px', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 10 }}>
                 <span style={{ fontSize: 15 }}>{p.icon}</span>
                 <div>
                   <div style={{ fontSize: 10, color: '#8452B8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>{p.label}</div>
@@ -172,10 +172,10 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       <ExpressionSuggester matchId={matchId} onUse={handleUseExpression} />
 
       {/* Input bar */}
-      <div style={{ flexShrink: 0, padding: '11px 14px', background: '#1C1228', borderTop: '1px solid #5a1a8a' }}>
+      <div style={{ flexShrink: 0, padding: '11px 14px', background: '#2A1648', borderTop: '1px solid #5a1a8a' }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={() => setShowStore(true)}
-            style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 12, background: '#261A36', border: '1px solid #3D2860', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 12, background: '#342058', border: '1px solid #3D2860', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             🎭
           </button>
           <button onClick={() => { setShowCoaching(!showCoaching); setCoachingHint(null); }}
@@ -186,7 +186,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
             onChange={(e) => { setNewMessage(e.target.value); if (!e.target.value) setCoachingHint(null); }}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
             placeholder="Say something real..."
-            style={{ flex: 1, padding: '11px 16px', background: '#261A36', border: '1px solid #3D2860', borderRadius: 20, color: '#EDE8F5', fontSize: 15, outline: 'none' }} />
+            style={{ flex: 1, padding: '11px 16px', background: '#342058', border: '1px solid #3D2860', borderRadius: 20, color: '#EDE8F5', fontSize: 15, outline: 'none' }} />
           <button onClick={() => sendMessage()} disabled={!newMessage.trim()}
             style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 12, border: 'none', fontSize: 18, cursor: newMessage.trim() ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', background: newMessage.trim() ? 'linear-gradient(135deg,#7B1C4A,#4A0F2E)' : '#2d0a52' }}>
             ↑

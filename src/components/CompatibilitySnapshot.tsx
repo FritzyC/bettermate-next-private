@@ -165,7 +165,7 @@ export default function CompatibilitySnapshot({ matchId }: { matchId: string }) 
   const topColor = data.overallScore >= 70 ? '#c084fc' : '#f0abca';
 
   return (
-    <div style={{ background: 'linear-gradient(160deg,#0e0a1a 0%,#150d24 100%)', border: '1px solid #2a1f45', borderRadius: 20, padding: '28px 24px', fontFamily: 'Georgia, serif', color: '#fff', marginBottom: 24 }}>
+    <div style={{ background: 'linear-gradient(160deg,#1E1035 0%,#2A1648 100%)', border: '1px solid #5A3A8A', borderRadius: 20, padding: '28px 24px', fontFamily: 'Georgia, serif', color: '#fff', marginBottom: 24 }}>
       <div style={{ marginBottom: 24 }}>
         <p style={{ margin: '0 0 4px', fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#4a3a6a', fontFamily: 'system-ui' }}>Why This Works</p>
         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 400, color: '#e8d8f8', letterSpacing: '-0.02em' }}>Compatibility Snapshot</h2>
@@ -187,7 +187,7 @@ export default function CompatibilitySnapshot({ matchId }: { matchId: string }) 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
         {data.dimensions.map((d) => (
           <button key={d.id} onClick={() => { const opening = expanded !== d.id; setExpanded(opening ? d.id : null); if (opening) trackEvent('snapshot_expanded', { dimension: d.id, score: d.score }, matchId); }}
-            style={{ background: expanded === d.id ? 'rgba(192,132,252,0.05)' : '#0e0a1a', border: '1px solid ' + (expanded === d.id ? d.color + '33' : '#1e1634'), borderRadius: 14, padding: '15px 17px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease' }}>
+            style={{ background: expanded === d.id ? 'rgba(192,132,252,0.05)' : '#1E1035', border: '1px solid ' + (expanded === d.id ? d.color + '33' : '#4A2A78'), borderRadius: 14, padding: '15px 17px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s ease' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
                 <span style={{ fontSize: 18, color: d.color }}>{d.icon}</span>
@@ -202,7 +202,7 @@ export default function CompatibilitySnapshot({ matchId }: { matchId: string }) 
               </div>
             </div>
             {expanded === d.id && (
-              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #2a1f45' }}>
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid #5A3A8A' }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: d.color, marginBottom: 8, fontFamily: 'system-ui' }}>{d.headline}</div>
                 <p style={{ margin: 0, fontSize: 13, lineHeight: 1.65, color: '#6a5a8a', fontFamily: 'system-ui' }}>{d.detail}</p>
               </div>
