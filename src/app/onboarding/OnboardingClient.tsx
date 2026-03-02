@@ -71,6 +71,8 @@ const QUESTIONS = [
 export default function OnboardingClient() {
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [pactAccepted, setPactAccepted] = useState(false);
+  const [showPactAgreement, setShowPactAgreement] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
@@ -100,11 +102,54 @@ export default function OnboardingClient() {
       id: session.user.id,
       ...next,
       onboarding_done: true,
+      pact_agreement_accepted: pactAccepted,
     });
 
     await trackEvent('onboarding_completed', { scores: next });
     router.replace('/onboarding/fingerprint');
   }
+
+
+  if (showPactAgreement) return (
+    <div style={{ minHeight: '100vh', background: '#1E1035', fontFamily: 'system-ui', color: '#EDE8F5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 20px' }}>
+      <div style={{ maxWidth: 480, width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 36, marginBottom: 16 }}>🤝</div>
+          <h2 style={{ fontSize: 22, fontWeight: 400, fontFamily: 'Georgia, serif', margin: '0 0 12px', color: '#EDE8F5' }}>The Date Pact Agreement</h2>
+          <p style={{ fontSize: 14, color: '#B8A8D4', lineHeight: 1.7, margin: 0 }}>BetterMate holds both people accountable to actually meeting. Here is how it works.</p>
+        </div>
+        <div style={{ background: '#2A1648', border: '1px solid #5A3A8A', borderRadius: 16, padding: '24px', marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {[
+            { icon: '💳', text: 'When you form a Commitment Bond, you may each deposit $15 from your Bond Wallet into escrow.' },
+            { icon: '📅', text: 'You have 7 days (168 hours) from bonding to meet in person.' },
+            { icon: '✅', text: 'Both confirm the date happened → both get $15 back in full.' },
+            { icon: '👻', text: 'One person flakes → they lose $15. $10 goes to the other person, $5 to BetterMate.' },
+            { icon: '❌', text: 'Both flake → each loses $10 to BetterMate, $5 is returned to each.' },
+            { icon: '🔒', text: 'Date Pact participation is voluntary. You can bond without activating a pact.' },
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+              <span style={{ fontSize: 18, flexShrink: 0 }}>{item.icon}</span>
+              <span style={{ fontSize: 13, color: '#B8A8D4', lineHeight: 1.6 }}>{item.text}</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => { setPactAccepted(true); }}
+          style={{ width: '100%', padding: '15px', background: pactAccepted ? '#2A1648' : 'linear-gradient(135deg, #7B1C4A, #4A0F2E)', border: pactAccepted ? '1px solid #4CAF7D' : 'none', borderRadius: 12, color: pactAccepted ? '#4CAF7D' : '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 12, transition: 'all 0.2s' }}>
+          {pactAccepted ? '✓ Agreement Accepted' : 'I Understand and Agree'}
+        </button>
+        <button onClick={() => { setPactAccepted(false); setShowPactAgreement(false); handleNext(); }}
+          style={{ width: '100%', padding: '12px', background: 'transparent', border: 'none', color: '#7A6A96', fontSize: 13, cursor: 'pointer' }}>
+          Skip for now
+        </button>
+        {pactAccepted && (
+          <button onClick={() => handleNext()}
+            style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg, #7B1C4A, #4A0F2E)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}>
+            Continue to Cultural Fingerprint →
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div style={{
