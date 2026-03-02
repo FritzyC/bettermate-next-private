@@ -94,24 +94,24 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   }
 
   if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#08041a', fontFamily: 'system-ui' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f0ebff', fontFamily: 'system-ui' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 28, marginBottom: 12 }}>✨</div>
-        <div style={{ fontSize: 13, color: '#6a5a8a' }}>Opening your space...</div>
+        <div style={{ fontSize: 13, color: '#5a4a8a' }}>Opening your space...</div>
       </div>
     </div>
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#08041a', color: '#fff', fontFamily: 'system-ui' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f0ebff', color: '#1a0a3d', fontFamily: 'system-ui' }}>
 
       {/* Header */}
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid #1e1634', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0a0514', flexShrink: 0 }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid #1e1634', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#ebe4ff', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <a href="/matches" style={{ color: '#7a6a9a', textDecoration: 'none', fontSize: 20, lineHeight: 1 }}>←</a>
+          <a href="/matches" style={{ color: '#6a5a9a', textDecoration: 'none', fontSize: 20, lineHeight: 1 }}>←</a>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#e8d8f8' }}>Match #{matchId ? String(matchId).slice(0, 8) : '...'}</div>
-            <div style={{ fontSize: 11, color: '#4a3a6a' }}>Private space</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: '#2d1b69' }}>Match #{matchId ? String(matchId).slice(0, 8) : '...'}</div>
+            <div style={{ fontSize: 11, color: '#7a6aaa' }}>Private space</div>
           </div>
         </div>
         <button onClick={() => setShowSnapshot(!showSnapshot)}
@@ -132,7 +132,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         {messages.length === 0 ? (
           <div style={{ textAlign: 'center', marginTop: 60 }}>
             <div style={{ fontSize: 32, marginBottom: 16 }}>✨</div>
-            <p style={{ color: '#6a5a8a', fontSize: 14, lineHeight: 1.6, maxWidth: 240, margin: '0 auto' }}>
+            <p style={{ color: '#5a4a8a', fontSize: 14, lineHeight: 1.6, maxWidth: 240, margin: '0 auto' }}>
               This is your space. Say something real.
             </p>
           </div>
@@ -147,8 +147,8 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
                   borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                   border: isMe ? 'none' : '1px solid #2a2048',
                 }}>
-                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: '#ffffff' }}>{msg.body}</p>
-                  <p style={{ margin: '5px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.5)', textAlign: isMe ? 'right' : 'left' }}>
+                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: isMe ? '#ffffff' : '#2d1b69' }}>{msg.body}</p>
+                  <p style={{ margin: '5px 0 0', fontSize: 10, color: isMe ? 'rgba(255,255,255,0.6)' : '#9a8ab8', textAlign: isMe ? 'right' : 'left' }}>
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -161,12 +161,12 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       {/* Coaching Panel */}
       {showCoaching && (
-        <div style={{ padding: '16px', background: '#0a0514', borderTop: '1px solid #1e1634', flexShrink: 0 }}>
-          <p style={{ margin: '0 0 12px', fontSize: 11, color: '#4a3a6a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Spark something real</p>
+        <div style={{ padding: '16px', background: '#ebe4ff', borderTop: '1px solid #1e1634', flexShrink: 0 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 11, color: '#7a6aaa', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Spark something real</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {COACHING_PROMPTS.map((p, i) => (
               <button key={i} onClick={() => selectPrompt(p)}
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #1e1634', borderRadius: 10, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 10 }}>
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #d4c8f0', borderRadius: 10, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 10 }}>
                 <span style={{ fontSize: 16 }}>{p.icon}</span>
                 <div>
                   <div style={{ fontSize: 11, color: '#a78bfa', marginBottom: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{p.label}</div>
@@ -181,7 +181,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       {/* Coaching hint */}
       {coachingHint && newMessage && (
         <div style={{ padding: '8px 16px', background: 'rgba(167,139,250,0.08)', borderTop: '1px solid rgba(167,139,250,0.15)', flexShrink: 0 }}>
-          <p style={{ margin: 0, fontSize: 12, color: '#7a6a9a', fontStyle: 'italic' }}>✨ {coachingHint}</p>
+          <p style={{ margin: 0, fontSize: 12, color: '#6a5a9a', fontStyle: 'italic' }}>✨ {coachingHint}</p>
         </div>
       )}
 
@@ -189,10 +189,10 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       <ExpressionSuggester matchId={matchId} onUse={handleUseExpression} />
 
       {/* Input bar */}
-      <div style={{ padding: '12px 16px', borderTop: '1px solid #1e1634', background: '#0a0514', flexShrink: 0 }}>
+      <div style={{ padding: '12px 16px', borderTop: '1px solid #1e1634', background: '#ebe4ff', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={() => setShowStore(true)}
-            style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid #2a1f45', fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid #c8b8e8', fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             🎭
           </button>
           <button onClick={() => { setShowCoaching(!showCoaching); setCoachingHint(null); }}
@@ -203,9 +203,9 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
             onChange={(e) => { setNewMessage(e.target.value); if (!e.target.value) setCoachingHint(null); }}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
             placeholder="Say something real..."
-            style={{ flex: 1, padding: '11px 16px', background: '#1a1030', border: '1px solid #2a1f45', borderRadius: 20, color: '#e8d8f8', fontSize: 15, outline: 'none' }} />
+            style={{ flex: 1, padding: '11px 16px', background: '#ddd4f7', border: '1px solid #c8b8e8', borderRadius: 20, color: '#2d1b69', fontSize: 15, outline: 'none' }} />
           <button onClick={() => sendMessage()} disabled={!newMessage.trim()}
-            style={{ width: 40, height: 40, borderRadius: 12, background: newMessage.trim() ? 'linear-gradient(135deg,#7c3aed,#be185d)' : '#1a1030', border: 'none', color: '#fff', fontSize: 18, cursor: newMessage.trim() ? 'pointer' : 'not-allowed', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            style={{ width: 40, height: 40, borderRadius: 12, background: newMessage.trim() ? 'linear-gradient(135deg,#7c3aed,#be185d)' : '#d4c8f0', border: 'none', color: '#1a0a3d', fontSize: 18, cursor: newMessage.trim() ? 'pointer' : 'not-allowed', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             ↑
           </button>
         </div>
