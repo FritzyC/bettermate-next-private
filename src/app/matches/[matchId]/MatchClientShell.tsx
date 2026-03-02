@@ -102,6 +102,9 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         </button>
       </div>
 
+      {/* Kinetic Matchmaker */}
+      {userId && <KineticMatchmaker matchId={matchId} userId={userId} />}
+
       {/* Snapshot overlay - does not push layout */}
       {showSnapshot && (
         <div style={{ flexShrink: 0, maxHeight: '42vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
