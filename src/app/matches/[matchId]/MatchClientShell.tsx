@@ -7,6 +7,7 @@ import { trackEvent } from '@/lib/bm/track';
 import CompatibilitySnapshot from '@/components/CompatibilitySnapshot';
 import ExpressionStore from '@/components/ExpressionStore';
 import BondWallet from '@/components/BondWallet';
+import ExpressionSuggester from '@/components/ExpressionSuggester';
 
 const COACHING_PROMPTS = [
   { icon: '💬', label: 'Go deeper', message: 'What is something you have been thinking about lately that most people never ask you about?', why: 'Opens a door most people never think to knock on.' },
@@ -178,6 +179,18 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
           <p style={{ margin: 0, fontSize: 12, color: '#6a5a8a', fontStyle: 'italic' }}>✨ {coachingHint}</p>
         </div>
       )}
+
+      {/* RAG Expression Suggester */}
+      <ExpressionSuggester matchId={matchId} onUse={async (expr) => {
+        const supabase = getSupabase();
+        if (!supabase || !userId) return;
+        await supabase.from('user_credits').select('balance').eq('user_id', userId).single().then(async ({ data }) => {
+          if (!data || data.balance < expr.credit_cost) return;
+          await supabase.from('user_credits').update({ balance: data.balance - expr.credit_cost, updated_at: new Date().toISOString() }).eq('user_id', userId);
+          await supabase.from('messages').insert({ match_id: matchId, sender_user_id: userId, body: expr.emoji + ' ' + expr.label });
+          trackEvent('message_sent', { type: 'expression', id: expr.id }, matchId);
+        });
+      }} />
 
       {/* Input bar */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid #1e1634', background: '#0a0514', flexShrink: 0 }}>
