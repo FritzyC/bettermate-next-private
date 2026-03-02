@@ -18,6 +18,19 @@ const COACHING_PROMPTS = [
   { icon: '🌱', label: 'Future-pull', message: 'I am curious what you are working on becoming right now - not doing, becoming.', why: 'Growth questions reveal character.' },
 ];
 
+// French violet palette
+const BG = '#1a0533';
+const BG2 = '#220640';
+const SURFACE = '#2d0a52';
+const SURFACE2 = '#3a0f66';
+const BORDER = '#5a1a8a';
+const BORDER_SOFT = '#4a1478';
+const TEXT_PRIMARY = '#f0e6ff';
+const TEXT_SECONDARY = '#c4a8e8';
+const TEXT_MUTED = '#8a5aaa';
+const SENT_BG = 'linear-gradient(135deg, #6d00cc, #a8006e)';
+const RECV_BG = '#2d0a52';
+
 export default function MatchClientShell({ matchId }: { matchId: string }) {
   const router = useRouter();
   const [messages, setMessages] = useState<any[]>([]);
@@ -76,9 +89,9 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
     setCoachingHint(null);
   }
 
-  function selectPrompt(prompt: typeof COACHING_PROMPTS[0]) {
-    setNewMessage(prompt.message);
-    setCoachingHint(prompt.why);
+  function selectPrompt(p: typeof COACHING_PROMPTS[0]) {
+    setNewMessage(p.message);
+    setCoachingHint(p.why);
     setShowCoaching(false);
   }
 
@@ -94,35 +107,35 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   }
 
   if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f0ebff', fontFamily: 'system-ui' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: BG, fontFamily: 'system-ui' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 28, marginBottom: 12 }}>✨</div>
-        <div style={{ fontSize: 13, color: '#5a4a8a' }}>Opening your space...</div>
+        <div style={{ fontSize: 13, color: TEXT_MUTED }}>Opening your space...</div>
       </div>
     </div>
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#f0ebff', color: '#1a0a3d', fontFamily: 'system-ui' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: BG, fontFamily: 'system-ui', overflow: 'hidden' }}>
 
       {/* Header */}
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid #1e1634', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#ebe4ff', flexShrink: 0 }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid ' + BORDER, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: BG2, flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <a href="/matches" style={{ color: '#6a5a9a', textDecoration: 'none', fontSize: 20, lineHeight: 1 }}>←</a>
+          <a href="/matches" style={{ color: TEXT_MUTED, textDecoration: 'none', fontSize: 20, lineHeight: 1 }}>←</a>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#2d1b69' }}>Match #{matchId ? String(matchId).slice(0, 8) : '...'}</div>
-            <div style={{ fontSize: 11, color: '#7a6aaa' }}>Private space</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: TEXT_PRIMARY }}>Match #{matchId ? String(matchId).slice(0, 8) : '...'}</div>
+            <div style={{ fontSize: 11, color: TEXT_MUTED }}>Private space</div>
           </div>
         </div>
         <button onClick={() => setShowSnapshot(!showSnapshot)}
-          style={{ background: showSnapshot ? 'rgba(192,132,252,0.15)' : 'transparent', border: '1px solid ' + (showSnapshot ? '#a78bfa' : '#2a1f45'), borderRadius: 20, padding: '6px 14px', color: showSnapshot ? '#c084fc' : '#6a5a8a', fontSize: 12, cursor: 'pointer' }}>
+          style={{ background: showSnapshot ? 'rgba(160,80,255,0.2)' : 'transparent', border: '1px solid ' + (showSnapshot ? '#a050ff' : BORDER_SOFT), borderRadius: 20, padding: '6px 14px', color: showSnapshot ? '#d080ff' : TEXT_MUTED, fontSize: 12, cursor: 'pointer' }}>
           {showSnapshot ? 'Hide' : '◈ Why this works'}
         </button>
       </div>
 
       {/* Snapshot */}
       {showSnapshot && (
-        <div style={{ padding: '16px 16px 0', flexShrink: 0, maxHeight: '45vh', overflowY: 'auto' }}>
+        <div style={{ padding: '16px 16px 0', flexShrink: 0, maxHeight: '45vh', overflowY: 'auto', background: BG }}>
           <CompatibilitySnapshot matchId={matchId} />
         </div>
       )}
@@ -132,7 +145,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         {messages.length === 0 ? (
           <div style={{ textAlign: 'center', marginTop: 60 }}>
             <div style={{ fontSize: 32, marginBottom: 16 }}>✨</div>
-            <p style={{ color: '#5a4a8a', fontSize: 14, lineHeight: 1.6, maxWidth: 240, margin: '0 auto' }}>
+            <p style={{ color: TEXT_MUTED, fontSize: 14, lineHeight: 1.6, maxWidth: 240, margin: '0 auto' }}>
               This is your space. Say something real.
             </p>
           </div>
@@ -140,15 +153,17 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
           messages.map((msg) => {
             const isMe = msg.sender_user_id === userId;
             return (
-              <div key={msg.id} style={{ alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '75%' }}>
+              <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                 <div style={{
-                  background: isMe ? 'linear-gradient(135deg, #7c3aed, #be185d)' : '#1e1a2e',
+                  background: isMe ? SENT_BG : RECV_BG,
                   padding: '11px 16px',
                   borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                  border: isMe ? 'none' : '1px solid #2a2048',
+                  border: isMe ? 'none' : '1px solid ' + BORDER_SOFT,
+                  maxWidth: '75%',
+                  wordBreak: 'break-word',
                 }}>
-                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: isMe ? '#ffffff' : '#2d1b69' }}>{msg.body}</p>
-                  <p style={{ margin: '5px 0 0', fontSize: 10, color: isMe ? 'rgba(255,255,255,0.6)' : '#9a8ab8', textAlign: isMe ? 'right' : 'left' }}>
+                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.55, color: '#ffffff' }}>{msg.body}</p>
+                  <p style={{ margin: '5px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.5)', textAlign: isMe ? 'right' : 'left' }}>
                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
@@ -161,16 +176,16 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       {/* Coaching Panel */}
       {showCoaching && (
-        <div style={{ padding: '16px', background: '#ebe4ff', borderTop: '1px solid #1e1634', flexShrink: 0 }}>
-          <p style={{ margin: '0 0 12px', fontSize: 11, color: '#7a6aaa', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Spark something real</p>
+        <div style={{ padding: '16px', background: BG2, borderTop: '1px solid ' + BORDER, flexShrink: 0, maxHeight: '40vh', overflowY: 'auto' }}>
+          <p style={{ margin: '0 0 12px', fontSize: 11, color: TEXT_MUTED, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Spark something real</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {COACHING_PROMPTS.map((p, i) => (
               <button key={i} onClick={() => selectPrompt(p)}
-                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #d4c8f0', borderRadius: 10, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 10 }}>
+                style={{ background: SURFACE, border: '1px solid ' + BORDER_SOFT, borderRadius: 10, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 10 }}>
                 <span style={{ fontSize: 16 }}>{p.icon}</span>
                 <div>
-                  <div style={{ fontSize: 11, color: '#a78bfa', marginBottom: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{p.label}</div>
-                  <div style={{ fontSize: 13, color: '#9a8ab8', lineHeight: 1.5 }}>{p.message}</div>
+                  <div style={{ fontSize: 11, color: '#b060ff', marginBottom: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{p.label}</div>
+                  <div style={{ fontSize: 13, color: TEXT_SECONDARY, lineHeight: 1.5 }}>{p.message}</div>
                 </div>
               </button>
             ))}
@@ -180,8 +195,8 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       {/* Coaching hint */}
       {coachingHint && newMessage && (
-        <div style={{ padding: '8px 16px', background: 'rgba(167,139,250,0.08)', borderTop: '1px solid rgba(167,139,250,0.15)', flexShrink: 0 }}>
-          <p style={{ margin: 0, fontSize: 12, color: '#6a5a9a', fontStyle: 'italic' }}>✨ {coachingHint}</p>
+        <div style={{ padding: '8px 16px', background: 'rgba(100,0,200,0.15)', borderTop: '1px solid rgba(160,80,255,0.2)', flexShrink: 0 }}>
+          <p style={{ margin: 0, fontSize: 12, color: TEXT_MUTED, fontStyle: 'italic' }}>✨ {coachingHint}</p>
         </div>
       )}
 
@@ -189,23 +204,23 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       <ExpressionSuggester matchId={matchId} onUse={handleUseExpression} />
 
       {/* Input bar */}
-      <div style={{ padding: '12px 16px', borderTop: '1px solid #1e1634', background: '#ebe4ff', flexShrink: 0 }}>
+      <div style={{ padding: '12px 16px', borderTop: '1px solid ' + BORDER, background: BG2, flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={() => setShowStore(true)}
-            style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid #c8b8e8', fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            style={{ width: 40, height: 40, borderRadius: 12, background: SURFACE, border: '1px solid ' + BORDER_SOFT, fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             🎭
           </button>
           <button onClick={() => { setShowCoaching(!showCoaching); setCoachingHint(null); }}
-            style={{ width: 40, height: 40, borderRadius: 12, background: showCoaching ? 'rgba(240,171,202,0.15)' : 'rgba(255,255,255,0.04)', border: '1px solid ' + (showCoaching ? '#f0abca' : '#2a1f45'), fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            style={{ width: 40, height: 40, borderRadius: 12, background: showCoaching ? 'rgba(160,80,255,0.2)' : SURFACE, border: '1px solid ' + (showCoaching ? '#a050ff' : BORDER_SOFT), fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             ✨
           </button>
           <input value={newMessage}
             onChange={(e) => { setNewMessage(e.target.value); if (!e.target.value) setCoachingHint(null); }}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
             placeholder="Say something real..."
-            style={{ flex: 1, padding: '11px 16px', background: '#ddd4f7', border: '1px solid #c8b8e8', borderRadius: 20, color: '#2d1b69', fontSize: 15, outline: 'none' }} />
+            style={{ flex: 1, padding: '11px 16px', background: SURFACE, border: '1px solid ' + BORDER_SOFT, borderRadius: 20, color: TEXT_PRIMARY, fontSize: 15, outline: 'none' }} />
           <button onClick={() => sendMessage()} disabled={!newMessage.trim()}
-            style={{ width: 40, height: 40, borderRadius: 12, background: newMessage.trim() ? 'linear-gradient(135deg,#7c3aed,#be185d)' : '#d4c8f0', border: 'none', color: '#1a0a3d', fontSize: 18, cursor: newMessage.trim() ? 'pointer' : 'not-allowed', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            style={{ width: 40, height: 40, borderRadius: 12, background: newMessage.trim() ? SENT_BG : SURFACE, border: 'none', color: '#fff', fontSize: 18, cursor: newMessage.trim() ? 'pointer' : 'not-allowed', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             ↑
           </button>
         </div>
