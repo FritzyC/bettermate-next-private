@@ -103,7 +103,7 @@ export default function OnboardingClient() {
     });
 
     await trackEvent('onboarding_completed', { scores: next });
-    router.replace('/matches');
+    router.replace('/onboarding/fingerprint');
   }
 
   return (

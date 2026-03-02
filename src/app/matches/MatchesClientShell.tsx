@@ -23,6 +23,12 @@ export default function MatchesClientShell() {
         .eq('id', session.user.id)
         .single();
       if (!profile?.onboarding_done) { router.replace('/onboarding'); return; }
+      const { data: fingerprint } = await supabase
+        .from('user_fingerprint')
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
+      if (!fingerprint) { router.replace('/onboarding/fingerprint'); return; }
       supabase
         .from('matches')
         .select('*')
