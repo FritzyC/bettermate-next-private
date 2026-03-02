@@ -10,7 +10,9 @@ export type EventType =
   | 'snapshot_expanded'
   | 'bond_proposed'
   | 'bond_accepted'
-  | 'bond_declined';
+  | 'bond_declined'
+  | 'date_pact_deposit'
+  | 'date_pact_confirmed';
 
 export async function trackEvent(
   eventType: EventType,
