@@ -82,16 +82,22 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
     setShowCoaching(false);
   }
 
-  function handleBuyExpression(expr: any) {
+  async function handleUseExpression(expr: any) {
     setShowStore(false);
-    sendMessage(expr.emoji + ' ' + expr.label);
+    const supabase = getSupabase();
+    if (!supabase || !userId) return;
+    const { data } = await supabase.from('user_credits').select('balance').eq('user_id', userId).single();
+    if (!data || data.balance < expr.credit_cost) return;
+    await supabase.from('user_credits').update({ balance: data.balance - expr.credit_cost, updated_at: new Date().toISOString() }).eq('user_id', userId);
+    await supabase.from('messages').insert({ match_id: matchId, sender_user_id: userId, body: expr.emoji + ' ' + expr.label });
+    trackEvent('message_sent', { type: 'expression', id: expr.id }, matchId);
   }
 
   if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#08041a', color: '#a78bfa', fontFamily: 'system-ui' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#08041a', fontFamily: 'system-ui' }}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 28, marginBottom: 12 }}>✨</div>
-        <div style={{ fontSize: 13, color: '#4a3a6a' }}>Opening your space...</div>
+        <div style={{ fontSize: 13, color: '#6a5a8a' }}>Opening your space...</div>
       </div>
     </div>
   );
@@ -102,14 +108,14 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       {/* Header */}
       <div style={{ padding: '14px 20px', borderBottom: '1px solid #1e1634', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0a0514', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <a href="/matches" style={{ color: '#4a3a6a', textDecoration: 'none', fontSize: 18 }}>←</a>
+          <a href="/matches" style={{ color: '#7a6a9a', textDecoration: 'none', fontSize: 20, lineHeight: 1 }}>←</a>
           <div>
             <div style={{ fontSize: 14, fontWeight: 600, color: '#e8d8f8' }}>Match #{matchId ? String(matchId).slice(0, 8) : '...'}</div>
             <div style={{ fontSize: 11, color: '#4a3a6a' }}>Private space</div>
           </div>
         </div>
         <button onClick={() => setShowSnapshot(!showSnapshot)}
-          style={{ background: showSnapshot ? 'rgba(192,132,252,0.15)' : 'transparent', border: '1px solid ' + (showSnapshot ? '#a78bfa' : '#2a1f45'), borderRadius: 20, padding: '6px 14px', color: showSnapshot ? '#c084fc' : '#4a3a6a', fontSize: 12, cursor: 'pointer', transition: 'all 0.2s' }}>
+          style={{ background: showSnapshot ? 'rgba(192,132,252,0.15)' : 'transparent', border: '1px solid ' + (showSnapshot ? '#a78bfa' : '#2a1f45'), borderRadius: 20, padding: '6px 14px', color: showSnapshot ? '#c084fc' : '#6a5a8a', fontSize: 12, cursor: 'pointer' }}>
           {showSnapshot ? 'Hide' : '◈ Why this works'}
         </button>
       </div>
@@ -126,27 +132,26 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         {messages.length === 0 ? (
           <div style={{ textAlign: 'center', marginTop: 60 }}>
             <div style={{ fontSize: 32, marginBottom: 16 }}>✨</div>
-            <p style={{ color: '#6a5a8a', fontSize: 14, lineHeight: 1.6, maxWidth: 240, margin: '0 auto' }}>This is your space. Say something real.</p>
+            <p style={{ color: '#6a5a8a', fontSize: 14, lineHeight: 1.6, maxWidth: 240, margin: '0 auto' }}>
+              This is your space. Say something real.
+            </p>
           </div>
         ) : (
           messages.map((msg) => {
             const isMe = msg.sender_user_id === userId;
-            const isExpression = msg.body?.includes('🔥') || msg.body?.includes('💭') || msg.body?.includes('🌙') || msg.body?.includes('💫') || msg.body?.includes('🫂') || msg.body?.includes('🧲') || msg.body?.includes('🫶') || msg.body?.includes('💎') || msg.body?.includes('👁') || msg.body?.length <= 40 && msg.body?.match(/^\p{Emoji}/u);
             return (
               <div key={msg.id} style={{ alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '75%' }}>
-                {isExpression ? (
-                  <div style={{ background: isMe ? 'linear-gradient(135deg,rgba(124,58,237,0.2),rgba(190,24,93,0.2))' : 'rgba(255,255,255,0.04)', border: '1px solid ' + (isMe ? '#7c3aed55' : '#2a1f45'), borderRadius: 16, padding: '12px 16px', textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, marginBottom: 4 }}>{msg.body?.split(' ')[0]}</div>
-                    <div style={{ fontSize: 12, color: isMe ? '#c084fc' : '#7a6a9a' }}>{msg.body?.split(' ').slice(1).join(' ')}</div>
-                  </div>
-                ) : (
-                  <div style={{ background: isMe ? 'linear-gradient(135deg,#7c3aed,#be185d)' : '#2a1f45', padding: '10px 16px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', border: isMe ? 'none' : '1px solid #2a1f45' }}>
-                    <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: '#fff' }}>{msg.body}</p>
-                    <p style={{ margin: '4px 0 0', fontSize: 10, opacity: 0.7, textAlign: isMe ? 'right' : 'left' }}>
-                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                )}
+                <div style={{
+                  background: isMe ? 'linear-gradient(135deg, #7c3aed, #be185d)' : '#1e1a2e',
+                  padding: '11px 16px',
+                  borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                  border: isMe ? 'none' : '1px solid #2a2048',
+                }}>
+                  <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: '#ffffff' }}>{msg.body}</p>
+                  <p style={{ margin: '5px 0 0', fontSize: 10, color: 'rgba(255,255,255,0.5)', textAlign: isMe ? 'right' : 'left' }}>
+                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
               </div>
             );
           })
@@ -161,11 +166,11 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {COACHING_PROMPTS.map((p, i) => (
               <button key={i} onClick={() => selectPrompt(p)}
-                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid #1e1634', borderRadius: 10, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <span style={{ fontSize: 16, flexShrink: 0 }}>{p.icon}</span>
+                style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #1e1634', borderRadius: 10, padding: '12px 14px', cursor: 'pointer', textAlign: 'left', display: 'flex', gap: 10 }}>
+                <span style={{ fontSize: 16 }}>{p.icon}</span>
                 <div>
                   <div style={{ fontSize: 11, color: '#a78bfa', marginBottom: 3, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{p.label}</div>
-                  <div style={{ fontSize: 13, color: '#7a6a9a', lineHeight: 1.5 }}>{p.message}</div>
+                  <div style={{ fontSize: 13, color: '#9a8ab8', lineHeight: 1.5 }}>{p.message}</div>
                 </div>
               </button>
             ))}
@@ -173,28 +178,19 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         </div>
       )}
 
-      {/* Coaching hint (only sender sees this) */}
+      {/* Coaching hint */}
       {coachingHint && newMessage && (
         <div style={{ padding: '8px 16px', background: 'rgba(167,139,250,0.08)', borderTop: '1px solid rgba(167,139,250,0.15)', flexShrink: 0 }}>
-          <p style={{ margin: 0, fontSize: 12, color: '#6a5a8a', fontStyle: 'italic' }}>✨ {coachingHint}</p>
+          <p style={{ margin: 0, fontSize: 12, color: '#7a6a9a', fontStyle: 'italic' }}>✨ {coachingHint}</p>
         </div>
       )}
 
-      {/* RAG Expression Suggester */}
-      <ExpressionSuggester matchId={matchId} onUse={async (expr) => {
-        const supabase = getSupabase();
-        if (!supabase || !userId) return;
-        await supabase.from('user_credits').select('balance').eq('user_id', userId).single().then(async ({ data }) => {
-          if (!data || data.balance < expr.credit_cost) return;
-          await supabase.from('user_credits').update({ balance: data.balance - expr.credit_cost, updated_at: new Date().toISOString() }).eq('user_id', userId);
-          await supabase.from('messages').insert({ match_id: matchId, sender_user_id: userId, body: expr.emoji + ' ' + expr.label });
-          trackEvent('message_sent', { type: 'expression', id: expr.id }, matchId);
-        });
-      }} />
+      {/* RAG Suggester */}
+      <ExpressionSuggester matchId={matchId} onUse={handleUseExpression} />
 
       {/* Input bar */}
       <div style={{ padding: '12px 16px', borderTop: '1px solid #1e1634', background: '#0a0514', flexShrink: 0 }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={() => setShowStore(true)}
             style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid #2a1f45', fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             🎭
@@ -203,19 +199,19 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
             style={{ width: 40, height: 40, borderRadius: 12, background: showCoaching ? 'rgba(240,171,202,0.15)' : 'rgba(255,255,255,0.04)', border: '1px solid ' + (showCoaching ? '#f0abca' : '#2a1f45'), fontSize: 18, cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             ✨
           </button>
-          <input value={newMessage} onChange={(e) => { setNewMessage(e.target.value); if (!e.target.value) setCoachingHint(null); }}
+          <input value={newMessage}
+            onChange={(e) => { setNewMessage(e.target.value); if (!e.target.value) setCoachingHint(null); }}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
             placeholder="Say something real..."
             style={{ flex: 1, padding: '11px 16px', background: '#1a1030', border: '1px solid #2a1f45', borderRadius: 20, color: '#e8d8f8', fontSize: 15, outline: 'none' }} />
           <button onClick={() => sendMessage()} disabled={!newMessage.trim()}
-            style={{ width: 40, height: 40, borderRadius: 12, background: newMessage.trim() ? 'linear-gradient(135deg,#7c3aed,#be185d)' : '#1a1030', border: 'none', color: '#fff', fontSize: 18, cursor: newMessage.trim() ? 'pointer' : 'not-allowed', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}>
+            style={{ width: 40, height: 40, borderRadius: 12, background: newMessage.trim() ? 'linear-gradient(135deg,#7c3aed,#be185d)' : '#1a1030', border: 'none', color: '#fff', fontSize: 18, cursor: newMessage.trim() ? 'pointer' : 'not-allowed', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             ↑
           </button>
         </div>
       </div>
 
-      {/* Expression Store overlay */}
-      {showStore && <ExpressionStore onClose={() => setShowStore(false)} onUse={handleBuyExpression} onOpenWallet={() => { setShowStore(false); setShowWallet(true); }} />}
+      {showStore && <ExpressionStore onClose={() => setShowStore(false)} onUse={handleUseExpression} onOpenWallet={() => { setShowStore(false); setShowWallet(true); }} />}
       {showWallet && <BondWallet onClose={() => setShowWallet(false)} />}
     </div>
   );
