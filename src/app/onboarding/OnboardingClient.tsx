@@ -10,11 +10,11 @@ const QUESTIONS = [
     label: 'Life Trajectory',
     question: 'Where are you headed in the next 3 years?',
     options: [
-      { score: 1, text: 'Still figuring it out — open to anything' },
+      { score: 1, text: 'Still figuring it out - open to anything' },
       { score: 2, text: 'I have a rough direction but staying flexible' },
       { score: 3, text: 'Clear goals, actively working toward them' },
-      { score: 4, text: 'Building something specific — focused and deliberate' },
-      { score: 5, text: 'Locked in — I know exactly where I'm going' },
+      { score: 4, text: 'Building something specific - focused and deliberate' },
+      { score: 5, text: 'Locked in - I know exactly where I am going' },
     ],
   },
   {
@@ -22,11 +22,11 @@ const QUESTIONS = [
     label: 'Conflict Style',
     question: 'When something upsets you, what do you usually do first?',
     options: [
-      { score: 1, text: 'Go quiet and process alone — I need space' },
+      { score: 1, text: 'Go quiet and process alone - I need space' },
       { score: 2, text: 'Vent to someone I trust before addressing it' },
-      { score: 3, text: 'Try to understand the other person's side first' },
-      { score: 4, text: 'Name it directly — I'd rather be uncomfortable than unclear' },
-      { score: 5, text: 'Address it immediately — tension bothers me more than conflict' },
+      { score: 3, text: 'Try to understand the other side first' },
+      { score: 4, text: 'Name it directly - I would rather be uncomfortable than unclear' },
+      { score: 5, text: 'Address it immediately - tension bothers me more than conflict' },
     ],
   },
   {
@@ -34,11 +34,11 @@ const QUESTIONS = [
     label: 'Finance Alignment',
     question: 'How do you relate to money?',
     options: [
-      { score: 1, text: 'It stresses me out — I avoid thinking about it' },
-      { score: 2, text: 'Security blanket — I need a cushion to feel safe' },
-      { score: 3, text: 'A tool — I use it intentionally but don't obsess' },
-      { score: 4, text: 'Freedom — I want enough to live without constraints' },
-      { score: 5, text: 'Scorecard — I track it closely and think about it often' },
+      { score: 1, text: 'It stresses me out - I avoid thinking about it' },
+      { score: 2, text: 'Security blanket - I need a cushion to feel safe' },
+      { score: 3, text: 'A tool - I use it intentionally but do not obsess' },
+      { score: 4, text: 'Freedom - I want enough to live without constraints' },
+      { score: 5, text: 'Scorecard - I track it closely and think about it often' },
     ],
   },
   {
@@ -46,11 +46,11 @@ const QUESTIONS = [
     label: 'Growth Orientation',
     question: 'Would you rather build something new or perfect something existing?',
     options: [
-      { score: 1, text: 'Perfect what exists — consistency matters more to me' },
+      { score: 1, text: 'Perfect what exists - consistency matters more to me' },
       { score: 2, text: 'Mostly maintain, with occasional new challenges' },
-      { score: 3, text: 'Balance — I need both stability and new experiences' },
-      { score: 4, text: 'Lean toward new — growth energizes me' },
-      { score: 5, text: 'Always building — I get restless without forward motion' },
+      { score: 3, text: 'Balance - I need both stability and new experiences' },
+      { score: 4, text: 'Lean toward new - growth energizes me' },
+      { score: 5, text: 'Always building - I get restless without forward motion' },
     ],
   },
   {
@@ -58,11 +58,11 @@ const QUESTIONS = [
     label: 'Readiness',
     question: 'What are you actually ready for right now?',
     options: [
-      { score: 1, text: 'Casual — exploring without expectations' },
-      { score: 2, text: 'Open — willing to see where things go' },
-      { score: 3, text: 'Intentional — I want something real but I'm patient' },
-      { score: 4, text: 'Ready — I know what I want and I'm showing up for it' },
-      { score: 5, text: 'All in — I'm here to build something that lasts' },
+      { score: 1, text: 'Casual - exploring without expectations' },
+      { score: 2, text: 'Open - willing to see where things go' },
+      { score: 3, text: 'Intentional - I want something real but I am patient' },
+      { score: 4, text: 'Ready - I know what I want and I am showing up for it' },
+      { score: 5, text: 'All in - I am here to build something that lasts' },
     ],
   },
 ];
@@ -76,7 +76,7 @@ export default function OnboardingClient() {
 
   const q = QUESTIONS[step];
   const isLast = step === QUESTIONS.length - 1;
-  const progress = ((step) / QUESTIONS.length) * 100;
+  const progress = (step / QUESTIONS.length) * 100;
 
   async function handleNext() {
     if (selected === null) return;
@@ -116,7 +116,6 @@ export default function OnboardingClient() {
       fontFamily: 'system-ui',
       color: '#fff',
     }}>
-      {/* Logo area */}
       <div style={{ marginBottom: 48, textAlign: 'center' }}>
         <div style={{ fontSize: 13, letterSpacing: '0.2em', color: '#4a3a6a', textTransform: 'uppercase', marginBottom: 4 }}>
           BetterMate
@@ -126,7 +125,6 @@ export default function OnboardingClient() {
         </div>
       </div>
 
-      {/* Progress bar */}
       <div style={{ width: '100%', maxWidth: 520, marginBottom: 40 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
           <span style={{ fontSize: 11, color: '#4a3a6a', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
@@ -139,7 +137,7 @@ export default function OnboardingClient() {
         <div style={{ height: 2, background: '#1e1634', borderRadius: 2 }}>
           <div style={{
             height: '100%',
-            width: `${progress}%`,
+            width: progress + '%',
             background: 'linear-gradient(90deg, #a78bfa, #f0abca)',
             borderRadius: 2,
             transition: 'width 0.4s ease',
@@ -147,7 +145,6 @@ export default function OnboardingClient() {
         </div>
       </div>
 
-      {/* Question */}
       <div style={{ width: '100%', maxWidth: 520, marginBottom: 32 }}>
         <h2 style={{
           fontSize: 24,
@@ -168,10 +165,8 @@ export default function OnboardingClient() {
               onClick={() => setSelected(opt.score)}
               style={{
                 padding: '16px 20px',
-                background: selected === opt.score
-                  ? 'rgba(167,139,250,0.15)'
-                  : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${selected === opt.score ? '#a78bfa' : '#1e1634'}`,
+                background: selected === opt.score ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.03)',
+                border: '1px solid ' + (selected === opt.score ? '#a78bfa' : '#1e1634'),
                 borderRadius: 12,
                 color: selected === opt.score ? '#e8d8f8' : '#7a6a9a',
                 fontSize: 14,
@@ -188,7 +183,6 @@ export default function OnboardingClient() {
         </div>
       </div>
 
-      {/* Next button */}
       <div style={{ width: '100%', maxWidth: 520 }}>
         <button
           onClick={handleNext}
@@ -196,9 +190,7 @@ export default function OnboardingClient() {
           style={{
             width: '100%',
             padding: '16px',
-            background: selected !== null
-              ? 'linear-gradient(135deg, #a78bfa, #f0abca)'
-              : '#1e1634',
+            background: selected !== null ? 'linear-gradient(135deg, #a78bfa, #f0abca)' : '#1e1634',
             color: selected !== null ? '#fff' : '#3a2e5a',
             border: 'none',
             borderRadius: 12,
@@ -209,7 +201,7 @@ export default function OnboardingClient() {
             letterSpacing: '0.02em',
           }}
         >
-          {saving ? 'Saving...' : isLast ? 'See My Matches →' : 'Continue →'}
+          {saving ? 'Saving...' : isLast ? 'See My Matches' : 'Continue'}
         </button>
       </div>
     </div>
