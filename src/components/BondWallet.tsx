@@ -146,8 +146,7 @@ export default function BondWallet({ onClose }: { onClose: () => void }) {
         </button>
 
         <p style={{ margin: 0, fontSize: 11, color: '#2e2248', textAlign: 'center', lineHeight: 1.6 }}>
-          Stripe payment integration coming soon.{'
-'}Credits added instantly for testing.
+          Stripe payment integration coming soon. Credits added instantly for testing.
         </p>
       </div>
     </div>
