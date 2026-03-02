@@ -6,6 +6,7 @@ import { getSupabase } from '@/lib/supabaseClient';
 import { trackEvent } from '@/lib/bm/track';
 import CompatibilitySnapshot from '@/components/CompatibilitySnapshot';
 import ExpressionStore from '@/components/ExpressionStore';
+import BondWallet from '@/components/BondWallet';
 
 const COACHING_PROMPTS = [
   { icon: '💬', label: 'Go deeper', message: 'What is something you have been thinking about lately that most people never ask you about?', why: 'Opens a door most people never think to knock on.' },
@@ -25,6 +26,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   const [showSnapshot, setShowSnapshot] = useState(false);
   const [showCoaching, setShowCoaching] = useState(false);
   const [showStore, setShowStore] = useState(false);
+  const [showWallet, setShowWallet] = useState(false);
   const [coachingHint, setCoachingHint] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -200,7 +202,8 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       </div>
 
       {/* Expression Store overlay */}
-      {showStore && <ExpressionStore onClose={() => setShowStore(false)} onBuy={handleBuyExpression} />}
+      {showStore && <ExpressionStore onClose={() => setShowStore(false)} onUse={handleBuyExpression} onOpenWallet={() => { setShowStore(false); setShowWallet(true); }} />}
+      {showWallet && <BondWallet onClose={() => setShowWallet(false)} />}
     </div>
   );
 }
