@@ -51,13 +51,13 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   async function sendMessage() {
     const supabase = getSupabase();
     if (!supabase || !newMessage.trim() || !userId) return;
-    const { error } = await trackEvent('message_sent', { length: newMessage.trim().length }, matchId);
+    await trackEvent('message_sent', { length: newMessage.trim().length }, matchId);
     await supabase.from('messages').insert({
       match_id: matchId,
       sender_user_id: userId,
       body: newMessage.trim(),
     });
-    if (!error) setNewMessage('');
+    setNewMessage('');
   }
 
   if (loading) {
