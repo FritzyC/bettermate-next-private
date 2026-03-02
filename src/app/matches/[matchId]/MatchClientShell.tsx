@@ -8,6 +8,7 @@ import CompatibilitySnapshot from '@/components/CompatibilitySnapshot';
 import ExpressionStore from '@/components/ExpressionStore';
 import BondWallet from '@/components/BondWallet';
 import ExpressionSuggester from '@/components/ExpressionSuggester';
+import KineticMatchmaker from '@/components/KineticMatchmaker';
 
 const COACHING_PROMPTS = [
   { icon: '💬', label: 'Go deeper', message: 'What is something you have been thinking about lately that most people never ask you about?', why: 'Opens a door most people never think to knock on.' },
