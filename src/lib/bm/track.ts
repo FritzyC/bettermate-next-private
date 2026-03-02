@@ -7,7 +7,10 @@ export type EventType =
   | 'invite_created'
   | 'invite_accepted'
   | 'snapshot_viewed'
-  | 'snapshot_expanded';
+  | 'snapshot_expanded'
+  | 'bond_proposed'
+  | 'bond_accepted'
+  | 'bond_declined';
 
 export async function trackEvent(
   eventType: EventType,
