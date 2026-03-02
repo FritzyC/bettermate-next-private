@@ -126,7 +126,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         {messages.length === 0 ? (
           <div style={{ textAlign: 'center', marginTop: 60 }}>
             <div style={{ fontSize: 32, marginBottom: 16 }}>✨</div>
-            <p style={{ color: '#2e2248', fontSize: 14, lineHeight: 1.6, maxWidth: 240, margin: '0 auto' }}>This is your space. Say something real.</p>
+            <p style={{ color: '#6a5a8a', fontSize: 14, lineHeight: 1.6, maxWidth: 240, margin: '0 auto' }}>This is your space. Say something real.</p>
           </div>
         ) : (
           messages.map((msg) => {
@@ -140,9 +140,9 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
                     <div style={{ fontSize: 12, color: isMe ? '#c084fc' : '#7a6a9a' }}>{msg.body?.split(' ').slice(1).join(' ')}</div>
                   </div>
                 ) : (
-                  <div style={{ background: isMe ? 'linear-gradient(135deg,#7c3aed,#be185d)' : '#1a1030', padding: '10px 16px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', border: isMe ? 'none' : '1px solid #2a1f45' }}>
-                    <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: isMe ? '#fff' : '#c8b8e8' }}>{msg.body}</p>
-                    <p style={{ margin: '4px 0 0', fontSize: 10, opacity: 0.4, textAlign: isMe ? 'right' : 'left' }}>
+                  <div style={{ background: isMe ? 'linear-gradient(135deg,#7c3aed,#be185d)' : '#2a1f45', padding: '10px 16px', borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px', border: isMe ? 'none' : '1px solid #2a1f45' }}>
+                    <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: '#fff' }}>{msg.body}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: 10, opacity: 0.7, textAlign: isMe ? 'right' : 'left' }}>
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
