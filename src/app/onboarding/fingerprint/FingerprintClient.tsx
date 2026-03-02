@@ -70,6 +70,7 @@ const STEPS = [
   { id: 'career', title: 'Education & Career', subtitle: 'Context helps us understand your world.' },
   { id: 'hobbies', title: 'Active Hobbies', subtitle: 'Activities help us design first dates that feel effortless.' },
   { id: 'lifestyle', title: 'Lifestyle', subtitle: 'Honest answers help us protect your time.' },
+  { id: 'deepdive', title: 'Tell Us More', subtitle: 'The more specific you are, the more accurate your matches become. Write freely.' },
 ];
 
 export default function FingerprintClient() {
@@ -87,6 +88,12 @@ export default function FingerprintClient() {
   const [kidsDealbreaker, setKidsDealbreaker] = useState(false);
   const [smoking, setSmoking] = useState('');
   const [smokingDealbreaker, setSmokingDealbreaker] = useState(false);
+  const [favoriteMovieLines, setFavoriteMovieLines] = useState('');
+  const [aboutActivities, setAboutActivities] = useState('');
+  const [aboutSelf, setAboutSelf] = useState('');
+  const [dealValues, setDealValues] = useState('');
+  const [idealSunday, setIdealSunday] = useState('');
+  const [loveLanguage, setLoveLanguage] = useState('');
 
   const current = STEPS[step];
   const progress = (step / STEPS.length) * 100;
@@ -101,6 +108,7 @@ export default function FingerprintClient() {
     if (current.id === 'career') return true;
     if (current.id === 'hobbies') return hobbies.length >= 2;
     if (current.id === 'lifestyle') return kidsPreference.length > 0 && smoking !== '';
+    if (current.id === 'deepdive') return true;
     return false;
   }
 
@@ -126,6 +134,12 @@ export default function FingerprintClient() {
       kids_dealbreaker: kidsDealbreaker,
       smoking,
       smoking_dealbreaker: smokingDealbreaker,
+      favorite_movie_lines: favoriteMovieLines || null,
+      about_activities: aboutActivities || null,
+      about_self: aboutSelf || null,
+      deal_values: dealValues || null,
+      ideal_sunday: idealSunday || null,
+      love_language: loveLanguage || null,
       updated_at: new Date().toISOString(),
     });
 
@@ -217,6 +231,29 @@ export default function FingerprintClient() {
                 <Toggle label="This is a dealbreaker for me" value={smokingDealbreaker} onChange={setSmokingDealbreaker} />
               </div>
             </div>
+          </div>
+        )}
+
+        {current.id === 'deepdive' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            {[
+              { label: 'A movie line or scene that stuck with you', placeholder: 'e.g. "You had me at hello" — or the moment in Interstellar when...', value: favoriteMovieLines, set: setFavoriteMovieLines },
+              { label: 'What do you actually do on a weekend?', placeholder: 'Be specific — not just hiking, but the trail, the vibe, who you go with...', value: aboutActivities, set: setAboutActivities },
+              { label: 'What would a close friend say about you that a stranger would never guess?', placeholder: 'The thing that surprises people once they know you...', value: aboutSelf, set: setAboutSelf },
+              { label: 'What do you need in a relationship to feel safe?', placeholder: 'Your real answer, not the one that sounds good...', value: dealValues, set: setDealValues },
+              { label: 'Describe your ideal Sunday morning', placeholder: 'Time, place, who is there, what you are doing...', value: idealSunday, set: setIdealSunday },
+              { label: 'How do you show love? How do you need to receive it?', placeholder: 'Acts of service, presence, words, touch, time...', value: loveLanguage, set: setLoveLanguage },
+            ].map((q, i) => (
+              <div key={i}>
+                <p style={{ margin: '0 0 8px', fontSize: 12, color: '#8452B8', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>{q.label}</p>
+                <textarea value={q.value} onChange={e => q.set(e.target.value)}
+                  placeholder={q.placeholder} rows={3}
+                  style={{ width: '100%', padding: '13px 16px', background: '#342058', border: '1px solid #5A3A8A', borderRadius: 12, color: '#EDE8F5', fontSize: 14, outline: 'none', resize: 'vertical', lineHeight: 1.6, fontFamily: 'system-ui', boxSizing: 'border-box', placeholderColor: '#7A6A96' }} />
+              </div>
+            ))}
+            <p style={{ margin: 0, fontSize: 11, color: '#3D2860', lineHeight: 1.6, textAlign: 'center' }}>
+              All fields are optional. Every detail makes your matches more accurate.
+            </p>
           </div>
         )}
 
