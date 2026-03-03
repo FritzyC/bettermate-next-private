@@ -12,6 +12,7 @@ import KineticMatchmaker from '@/components/KineticMatchmaker';
 import CommitmentBond from '@/components/CommitmentBond';
 import DatePact from '@/components/DatePact';
 import DatePlan from '@/components/DatePlan';
+import SafetyLayer from '@/components/SafetyLayer';
 
 const COACHING_PROMPTS = [
   { icon: '💬', label: 'Go deeper', message: 'What is something you have been thinking about lately that most people never ask you about?', why: 'Opens a door most people never think to knock on.' },
@@ -116,6 +117,9 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       {/* 72-Hour Date Plan */}
       {userId && <DatePlan matchId={matchId} userId={userId} />}
+
+      {/* Safety Layer */}
+      {userId && <SafetyLayer matchId={matchId} userId={userId} />}
 
       {/* Snapshot overlay - does not push layout */}
       {showSnapshot && (

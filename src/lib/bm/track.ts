@@ -22,7 +22,12 @@ export type EventType =
   | 'plan_time_confirmed'
   | 'plan_checkin_confirmed'
   | 'plan_cancelled'
-  | 'plan_maps_clicked';
+  | 'plan_maps_clicked'
+  | 'safety_contact_added'
+  | 'safety_checkin_timer_set'
+  | 'safety_checkin_completed'
+  | 'safety_panic_opened'
+  | 'safety_panic_sms_sent';
 
 export async function trackEvent(
   eventType: EventType,
