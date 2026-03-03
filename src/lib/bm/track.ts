@@ -31,8 +31,11 @@ export type EventType =
   | 'shop_opened'
   | 'pack_purchased'
   | 'pack_applied'
-  | 'compat_graph_computed'
-  | 'compat_explanation_viewed';
+  | 'compat_graph_computed'  | 'compat_explanation_viewed'
+  | 'vibe_opened'
+  | 'vibe_closed'
+  | 'vibe_section_opened'
+  | 'why_this_works_opened';
 
 export async function trackEvent(
   eventType: EventType,
