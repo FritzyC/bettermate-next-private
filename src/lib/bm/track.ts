@@ -27,7 +27,10 @@ export type EventType =
   | 'safety_checkin_timer_set'
   | 'safety_checkin_completed'
   | 'safety_panic_opened'
-  | 'safety_panic_sms_sent';
+  | 'safety_panic_sms_sent'
+  | 'shop_opened'
+  | 'pack_purchased'
+  | 'pack_applied';
 
 export async function trackEvent(
   eventType: EventType,

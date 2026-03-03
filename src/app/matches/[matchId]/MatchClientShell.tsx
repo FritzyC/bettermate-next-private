@@ -13,6 +13,7 @@ import CommitmentBond from '@/components/CommitmentBond';
 import DatePact from '@/components/DatePact';
 import DatePlan from '@/components/DatePlan';
 import SafetyLayer from '@/components/SafetyLayer';
+import TrustedDatePrep from '@/components/TrustedDatePrep';
 
 const COACHING_PROMPTS = [
   { icon: '💬', label: 'Go deeper', message: 'What is something you have been thinking about lately that most people never ask you about?', why: 'Opens a door most people never think to knock on.' },
@@ -120,6 +121,9 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
       {/* Safety Layer */}
       {userId && <SafetyLayer matchId={matchId} userId={userId} />}
+
+      {/* Trusted Date Prep Store */}
+      {userId && <TrustedDatePrep matchId={matchId} userId={userId} />}
 
       {/* Snapshot overlay - does not push layout */}
       {showSnapshot && (
