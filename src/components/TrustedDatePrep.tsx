@@ -58,7 +58,7 @@ const PACKS = [
     usd: '$0.35',
     benefits: [
       'Send a "mutual intent" confirmation to your match',
-      'Both see each other's stated intention for the date',
+      'Both see each other stated intention for the date',
       'Reduces uncertainty and second-guessing',
     ],
     color: '#4CAF7D',
