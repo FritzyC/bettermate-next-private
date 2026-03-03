@@ -59,15 +59,14 @@ export type EventType =
   | 'integrity_visibility_restored'
   | 'integrity_score_viewed'
   | 'vibe_recommendation_shown'
-  | 'vibe_recommendation_tapped';
-
+  | 'vibe_recommendation_tapped'
+  | 'spotify_connect_started'
+  | 'spotify_track_search'
+  | 'spotify_track_selected'
+  | 'store_purchase_prompt_shown'
+  | 'store_purchase_completed'
+  | 'song_share_sent'
   | 'song_share_opened';
-  | 'song_share_sent';
-  | 'store_purchase_completed';
-  | 'store_purchase_prompt_shown';
-  | 'spotify_track_selected';
-  | 'spotify_track_search';
-  | 'spotify_connect_started';
 export async function trackEvent(
   eventType: EventType,
   payload: Record<string, any> = {},
