@@ -65,6 +65,7 @@ export default function SafetyLayer({ matchId, userId, venueName, venueAddress, 
       updated_at: new Date().toISOString(),
     });
     await trackEvent('safety_contact_added', {}, matchId);
+    await trackEvent('safety_setup_completed', { match_id: matchId, enabled_features: ['emergency_contact'] }, matchId);
     await load();
     setSaving(false);
     setEditing(false);

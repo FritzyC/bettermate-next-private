@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { getSupabase } from '@/lib/supabaseClient';
 import { trackEvent } from '@/lib/bm/track';
+import ExplainableMatch from '@/components/ExplainableMatch';
 
 const SURFACE = '#2A1648';
 const ELEVATED = '#342058';
@@ -190,6 +191,7 @@ Respond with JSON only — an array of exactly 3 venues:
         body: '✅ Both agreed on ' + venue?.name + '. Now let\'s pick a time.',
       });
       await trackEvent('plan_venue_confirmed', { venue_id: venueId }, matchId);
+      await trackEvent('plan_confirmed', { venue_id: venueId, time: null, mode: 'midpoint' }, matchId);
     } else if (otherChoice && otherChoice !== venueId) {
       finalUpdate = { ...update, status: 'venue_mismatch' };
       await trackEvent('plan_venue_mismatch', {}, matchId);
@@ -258,7 +260,8 @@ Respond with JSON only — an array of exactly 3 venues:
 
     const { data: updated } = await supabase.from('date_plans').update(finalUpdate).eq('match_id', matchId).select().single();
     setPlan(updated);
-    await trackEvent('plan_checkin_confirmed', { showed }, matchId);
+    await trackEvent('plan_checkin_prompt_shown', {}, matchId);
+      await trackEvent('plan_checkin_confirmed', { showed, outcome: showed ? 'met' : 'rescheduled', safety_flag: false }, matchId);
     setActing(false);
     setShowCheckin(false);
   }
@@ -466,13 +469,13 @@ Respond with JSON only — an array of exactly 3 venues:
                   <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
                     <a href={'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent((plan.final_venue.address || plan.final_venue.name))}
                       target="_blank" rel="noopener noreferrer"
-                      onClick={() => trackEvent('plan_maps_clicked', { provider: 'google' }, matchId)}
+                      onClick={() => { trackEvent('plan_maps_clicked', { provider: 'google' }, matchId); trackEvent('plan_maps_directions_clicked', { provider: 'google' }, matchId); }}
                       style={{ flex: 1, padding: '11px', background: 'rgba(66,133,244,0.15)', border: '1px solid rgba(66,133,244,0.3)', borderRadius: 10, color: '#6BA3F5', fontSize: 13, fontWeight: 600, textAlign: 'center', textDecoration: 'none', display: 'block' }}>
                       🗺 Google Maps
                     </a>
                     <a href={'https://waze.com/ul?q=' + encodeURIComponent((plan.final_venue.address || plan.final_venue.name))}
                       target="_blank" rel="noopener noreferrer"
-                      onClick={() => trackEvent('plan_maps_clicked', { provider: 'waze' }, matchId)}
+                      onClick={() => { trackEvent('plan_maps_clicked', { provider: 'waze' }, matchId); trackEvent('plan_maps_directions_clicked', { provider: 'waze' }, matchId); }}
                       style={{ flex: 1, padding: '11px', background: 'rgba(0,210,91,0.1)', border: '1px solid rgba(0,210,91,0.25)', borderRadius: 10, color: '#00D25B', fontSize: 13, fontWeight: 600, textAlign: 'center', textDecoration: 'none', display: 'block' }}>
                       🚗 Waze
                     </a>
