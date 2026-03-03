@@ -37,7 +37,9 @@ export type EventType =
   | 'vibe_section_opened'
   | 'why_this_works_opened'
   | 'streak_viewed'
-  | 'streak_freeze_used';
+  | 'streak_freeze_used'
+  | 'coach_insights_generated'
+  | 'coach_insights_viewed';
 
 export async function trackEvent(
   eventType: EventType,
