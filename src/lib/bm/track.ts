@@ -12,7 +12,16 @@ export type EventType =
   | 'bond_accepted'
   | 'bond_declined'
   | 'date_pact_deposit'
-  | 'date_pact_confirmed';
+  | 'date_pact_confirmed'
+  | 'plan_started'
+  | 'plan_venues_presented'
+  | 'plan_venue_selected'
+  | 'plan_venue_confirmed'
+  | 'plan_venue_mismatch'
+  | 'plan_time_selected'
+  | 'plan_time_confirmed'
+  | 'plan_checkin_confirmed'
+  | 'plan_cancelled';
 
 export async function trackEvent(
   eventType: EventType,
