@@ -43,7 +43,11 @@ export type EventType =
   | 'blind_chat_started'
   | 'blind_chat_message_qualifies'
   | 'blind_chat_threshold_reached'
-  | 'blind_chat_revealed';
+  | 'blind_chat_revealed'
+  | 'integrity_score_changed'
+  | 'integrity_visibility_tier_assigned'
+  | 'integrity_visibility_restored'
+  | 'integrity_score_viewed';
 
 export async function trackEvent(
   eventType: EventType,

@@ -10,6 +10,7 @@ import SafetyLayer from '@/components/SafetyLayer';
 import TrustedDatePrep from '@/components/TrustedDatePrep';
 import ShowUpStreak from '@/components/ShowUpStreak';
 import CoachInsights from '@/components/CoachInsights';
+import IntegrityScore from '@/components/IntegrityScore';
 
 const SURFACE = '#2A1648';
 const ELEVATED = '#342058';
@@ -44,6 +45,7 @@ const SECTIONS = [
   { id: 'date_prep', icon: '🎁', title: 'Trusted Date Prep', desc: 'Credit packs for date quality' },
   { id: 'streak', icon: '🔥', title: 'Show Up Streak', desc: 'Your consistency, your identity' },
   { id: 'coach', icon: '🧠', title: 'Coach Insights', desc: 'What your patterns say about you' },
+  { id: 'integrity', icon: '⬡', title: 'Integrity Score', desc: 'Your visibility and trust signal' },
 ];
 
 export default function VibeDrawer({
@@ -196,6 +198,11 @@ export default function VibeDrawer({
                     {section.id === 'safety' && (
                       <div style={{ padding: '0 0 4px' }}>
                         <SafetyLayer matchId={matchId} userId={userId} inline />
+                      </div>
+                    )}
+                    {section.id === 'integrity' && (
+                      <div style={{ padding: '0 0 4px' }}>
+                        <IntegrityScore userId={userId} />
                       </div>
                     )}
                     {section.id === 'coach' && (
