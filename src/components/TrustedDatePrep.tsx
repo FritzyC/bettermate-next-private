@@ -399,6 +399,8 @@ Respond with JSON only: { "icebreakers": ["...", "...", "...", "...", "..."] }`
             })}
           </div>
 
+          <SpotifySongShare matchId={matchId} userId={userId} />
+
           <div style={{ marginTop: 16, padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 10, fontSize: 11, color: MUTED, lineHeight: 1.6, textAlign: 'center' }}>
             All purchases are in Bond Wallet credits. No recurring charges. No hidden fees.
           </div>
