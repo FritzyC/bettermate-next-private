@@ -8,13 +8,7 @@ import CompatibilitySnapshot from '@/components/CompatibilitySnapshot';
 import ExpressionStore from '@/components/ExpressionStore';
 import BondWallet from '@/components/BondWallet';
 import ExpressionSuggester from '@/components/ExpressionSuggester';
-import KineticMatchmaker from '@/components/KineticMatchmaker';
-import CommitmentBond from '@/components/CommitmentBond';
-import DatePact from '@/components/DatePact';
-import DatePlan from '@/components/DatePlan';
-import SafetyLayer from '@/components/SafetyLayer';
-import TrustedDatePrep from '@/components/TrustedDatePrep';
-import CompatibilityGraph from '@/components/CompatibilityGraph';
+import VibeDrawer from '@/components/VibeDrawer';
 
 const COACHING_PROMPTS = [
   { icon: '💬', label: 'Go deeper', message: 'What is something you have been thinking about lately that most people never ask you about?', why: 'Opens a door most people never think to knock on.' },
@@ -32,6 +26,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   const [newMessage, setNewMessage] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [showSnapshot, setShowSnapshot] = useState(false);
+  const [vibeOpen, setVibeOpen] = useState(false);
   const [showCoaching, setShowCoaching] = useState(false);
   const [showStore, setShowStore] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
@@ -102,32 +97,34 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
             <div style={{ fontSize: 11, color: '#7A6A96' }}>Private space</div>
           </div>
         </div>
-        <button onClick={() => setShowSnapshot(!showSnapshot)}
+        <button onClick={() => { setShowSnapshot(!showSnapshot); if (!showSnapshot) trackEvent('why_this_works_opened', {}, matchId); }}
           style={{ padding: '7px 14px', borderRadius: 20, border: '1px solid #3D2860', background: 'transparent', color: showSnapshot ? '#d080ff' : '#9a6abf', fontSize: 12, cursor: 'pointer' }}>
           {showSnapshot ? 'Hide' : '◈ Why this works'}
         </button>
+        <button
+          onClick={() => { setVibeOpen(true); trackEvent('vibe_opened', { source: 'toolbar' }, matchId); }}
+          aria-label="Open Vibe space"
+          style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid #5A3A8A', background: vibeOpen ? 'rgba(132,82,184,0.25)' : 'rgba(132,82,184,0.08)', color: '#B48AE8', fontSize: 12, cursor: 'pointer', fontWeight: 600, letterSpacing: '0.02em' }}>
+          🎭 Vibe
+        </button>
       </div>
 
-      {/* Compatibility Graph */}
-      {userId && <CompatibilityGraph matchId={matchId} userId={userId} />}
 
-      {/* Kinetic Matchmaker */}
-      {userId && <KineticMatchmaker matchId={matchId} userId={userId} />}
 
-      {/* Commitment Bond */}
-      {userId && <CommitmentBond matchId={matchId} userId={userId} />}
 
-      {/* Date Pact */}
-      {userId && <DatePact matchId={matchId} userId={userId} />}
 
-      {/* 72-Hour Date Plan */}
-      {userId && <DatePlan matchId={matchId} userId={userId} />}
 
-      {/* Safety Layer */}
-      {userId && <SafetyLayer matchId={matchId} userId={userId} />}
 
-      {/* Trusted Date Prep Store */}
-      {userId && <TrustedDatePrep matchId={matchId} userId={userId} />}
+
+      {/* Vibe Drawer */}
+      {userId && vibeOpen && (
+        <VibeDrawer
+          open={vibeOpen}
+          onClose={() => { setVibeOpen(false); trackEvent('vibe_closed', {}, matchId); }}
+          matchId={matchId}
+          userId={userId}
+        />
+      )}
 
       {/* Snapshot overlay - does not push layout */}
       {showSnapshot && (
