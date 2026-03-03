@@ -9,6 +9,7 @@ import ExpressionStore from '@/components/ExpressionStore';
 import BondWallet from '@/components/BondWallet';
 import ExpressionSuggester from '@/components/ExpressionSuggester';
 import VibeDrawer from '@/components/VibeDrawer';
+import BlindChat, { isQualifying } from '@/components/BlindChat';
 
 const COACHING_PROMPTS = [
   { icon: '💬', label: 'Go deeper', message: 'What is something you have been thinking about lately that most people never ask you about?', why: 'Opens a door most people never think to knock on.' },
@@ -27,6 +28,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [showSnapshot, setShowSnapshot] = useState(false);
   const [vibeOpen, setVibeOpen] = useState(false);
+  const [blindRevealed, setBlindRevealed] = useState(false);
   const [showCoaching, setShowCoaching] = useState(false);
   const [showStore, setShowStore] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
@@ -59,6 +61,18 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
     const supabase = getSupabase();
     if (!supabase || !body || !userId) return;
     await trackEvent('message_sent', { length: body.length }, matchId);
+    if (userId && !blindRevealed && isQualifying(newMessage)) {
+      const { data: matchData } = await supabase.from('matches').select('*').eq('id', matchId).single();
+      if (matchData && !matchData.blind_revealed) {
+        const isUser1 = matchData.user1_id === userId;
+        const field = isUser1 ? 'user1_qualifying_msgs' : 'user2_qualifying_msgs';
+        const currentCount = isUser1 ? matchData.user1_qualifying_msgs : matchData.user2_qualifying_msgs;
+        if (currentCount < 6) {
+          await supabase.from('matches').update({ [field]: currentCount + 1 }).eq('id', matchId);
+        }
+      }
+    }
+
     await supabase.from('messages').insert({ match_id: matchId, sender_user_id: userId, body });
     setNewMessage('');
     setShowCoaching(false);
@@ -124,6 +138,12 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
           matchId={matchId}
           userId={userId}
         />
+      )}
+
+      {userId && (
+        <div style={{ padding: '8px 16px 0' }}>
+          <BlindChat matchId={matchId} userId={userId} onReveal={() => setBlindRevealed(true)} />
+        </div>
       )}
 
       {/* Snapshot overlay - does not push layout */}

@@ -39,7 +39,11 @@ export type EventType =
   | 'streak_viewed'
   | 'streak_freeze_used'
   | 'coach_insights_generated'
-  | 'coach_insights_viewed';
+  | 'coach_insights_viewed'
+  | 'blind_chat_started'
+  | 'blind_chat_message_qualifies'
+  | 'blind_chat_threshold_reached'
+  | 'blind_chat_revealed';
 
 export async function trackEvent(
   eventType: EventType,
