@@ -340,7 +340,7 @@ Respond with JSON only — an array of exactly 3 venues:
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, color: TEXT2 }}>
                   {[
                     '📍 BetterMate suggests 3 venues based on your shared interests',
-                    '🗳 Both vote — if you agree, it's confirmed',
+                    '🗳 Both vote — if you agree, it is confirmed',
                     '⏱ 72 hours to lock in a plan or the window expires',
                     '✅ Both check in after the date to confirm it happened',
                   ].map((item, i) => (
