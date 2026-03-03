@@ -61,6 +61,13 @@ export type EventType =
   | 'vibe_recommendation_shown'
   | 'vibe_recommendation_tapped';
 
+  | 'song_share_opened';
+  | 'song_share_sent';
+  | 'store_purchase_completed';
+  | 'store_purchase_prompt_shown';
+  | 'spotify_track_selected';
+  | 'spotify_track_search';
+  | 'spotify_connect_started';
 export async function trackEvent(
   eventType: EventType,
   payload: Record<string, any> = {},
