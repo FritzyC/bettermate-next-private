@@ -30,7 +30,9 @@ export type EventType =
   | 'safety_panic_sms_sent'
   | 'shop_opened'
   | 'pack_purchased'
-  | 'pack_applied';
+  | 'pack_applied'
+  | 'compat_graph_computed'
+  | 'compat_explanation_viewed';
 
 export async function trackEvent(
   eventType: EventType,

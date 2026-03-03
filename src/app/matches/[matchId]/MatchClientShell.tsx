@@ -14,6 +14,7 @@ import DatePact from '@/components/DatePact';
 import DatePlan from '@/components/DatePlan';
 import SafetyLayer from '@/components/SafetyLayer';
 import TrustedDatePrep from '@/components/TrustedDatePrep';
+import CompatibilityGraph from '@/components/CompatibilityGraph';
 
 const COACHING_PROMPTS = [
   { icon: '💬', label: 'Go deeper', message: 'What is something you have been thinking about lately that most people never ask you about?', why: 'Opens a door most people never think to knock on.' },
@@ -106,6 +107,9 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
           {showSnapshot ? 'Hide' : '◈ Why this works'}
         </button>
       </div>
+
+      {/* Compatibility Graph */}
+      {userId && <CompatibilityGraph matchId={matchId} userId={userId} />}
 
       {/* Kinetic Matchmaker */}
       {userId && <KineticMatchmaker matchId={matchId} userId={userId} />}
