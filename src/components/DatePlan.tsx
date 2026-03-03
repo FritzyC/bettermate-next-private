@@ -452,6 +452,41 @@ Respond with JSON only — an array of exactly 3 venues:
                 <div style={{ fontSize: 15, color: TEXT, fontWeight: 600 }}>{plan.final_venue?.name}</div>
                 <div style={{ fontSize: 13, color: TEXT2, marginTop: 4 }}>{plan.final_time ? formatDateTime(plan.final_time) : ''}</div>
               </div>
+
+              {/* Maps & Directions */}
+              {plan.final_venue && (
+                <div style={{ padding: '16px', background: ELEVATED, borderRadius: 14, border: '1px solid ' + BORDER, marginBottom: 16 }}>
+                  <p style={{ margin: '0 0 12px', fontSize: 11, color: GOLD, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>Get Directions</p>
+                  <p style={{ margin: '0 0 12px', fontSize: 12, color: MUTED, lineHeight: 1.5 }}>
+                    📍 {plan.final_venue.name} — {plan.final_venue.address}
+                  </p>
+                  <p style={{ margin: '0 0 14px', fontSize: 12, color: TEXT2, lineHeight: 1.5 }}>
+                    Arrive independently. Meet in public. Your safety comes first.
+                  </p>
+                  <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+                    <a href={'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent((plan.final_venue.address || plan.final_venue.name))}
+                      target="_blank" rel="noopener noreferrer"
+                      onClick={() => trackEvent('plan_maps_clicked', { provider: 'google' }, matchId)}
+                      style={{ flex: 1, padding: '11px', background: 'rgba(66,133,244,0.15)', border: '1px solid rgba(66,133,244,0.3)', borderRadius: 10, color: '#6BA3F5', fontSize: 13, fontWeight: 600, textAlign: 'center', textDecoration: 'none', display: 'block' }}>
+                      🗺 Google Maps
+                    </a>
+                    <a href={'https://waze.com/ul?q=' + encodeURIComponent((plan.final_venue.address || plan.final_venue.name))}
+                      target="_blank" rel="noopener noreferrer"
+                      onClick={() => trackEvent('plan_maps_clicked', { provider: 'waze' }, matchId)}
+                      style={{ flex: 1, padding: '11px', background: 'rgba(0,210,91,0.1)', border: '1px solid rgba(0,210,91,0.25)', borderRadius: 10, color: '#00D25B', fontSize: 13, fontWeight: 600, textAlign: 'center', textDecoration: 'none', display: 'block' }}>
+                      🚗 Waze
+                    </a>
+                  </div>
+                  {plan.final_time && (
+                    <div style={{ padding: '10px 14px', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 10 }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 11, color: GOLD, fontWeight: 600 }}>Leave by suggestion</p>
+                      <p style={{ margin: 0, fontSize: 13, color: TEXT2 }}>
+                        Plan to leave at least 30 minutes before {new Date(plan.final_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} to arrive on time.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
               <div style={{ padding: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, marginBottom: 16 }}>
                 <p style={{ margin: '0 0 8px', fontSize: 12, color: GOLD, fontWeight: 600 }}>Pre-Date Checklist</p>
                 {['Tell someone you trust where you are going', 'Arrive at a public, well-lit place', 'Keep your phone charged', 'You can always leave — your safety comes first'].map((item, i) => (

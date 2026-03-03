@@ -21,7 +21,8 @@ export type EventType =
   | 'plan_time_selected'
   | 'plan_time_confirmed'
   | 'plan_checkin_confirmed'
-  | 'plan_cancelled';
+  | 'plan_cancelled'
+  | 'plan_maps_clicked';
 
 export async function trackEvent(
   eventType: EventType,
