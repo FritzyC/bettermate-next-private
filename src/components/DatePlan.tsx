@@ -187,7 +187,7 @@ Respond with JSON only — an array of exactly 3 venues:
       await supabase.from('messages').insert({
         match_id: matchId,
         sender_user_id: userId,
-        body: '✅ Both agreed on ' + venue?.name + '. Now let's pick a time.',
+        body: '✅ Both agreed on ' + venue?.name + '. Now let\'s pick a time.',
       });
       await trackEvent('plan_venue_confirmed', { venue_id: venueId }, matchId);
     } else if (otherChoice && otherChoice !== venueId) {
