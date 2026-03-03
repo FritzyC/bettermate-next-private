@@ -29,7 +29,7 @@ type GraphData = {
   computed_at: string;
 };
 
-export default function CompatibilityGraph({ matchId, userId }: { matchId: string; userId: string }) {
+export default function CompatibilityGraph({ matchId, userId, inline = false }: { matchId: string; userId: string; inline?: boolean }) {
   const [graph, setGraph] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [computing, setComputing] = useState(false);
@@ -241,7 +241,7 @@ export default function CompatibilityGraph({ matchId, userId }: { matchId: strin
   if (loading) return null;
 
   return (
-    <div style={{ borderBottom: '1px solid ' + BORDER }}>
+    <div style={{ borderBottom: inline ? 'none' : '1px solid ' + BORDER }}>
       <button onClick={() => {
         setOpen(!open);
         if (!open && graph) trackEvent('compat_explanation_viewed', { score: graph.compatibility_score }, matchId);

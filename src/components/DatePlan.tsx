@@ -29,7 +29,7 @@ function formatDateTime(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-export default function DatePlan({ matchId, userId }: { matchId: string; userId: string }) {
+export default function DatePlan({ matchId, userId, inline = false }: { matchId: string; userId: string; inline?: boolean }) {
   const [plan, setPlan] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -309,7 +309,7 @@ Respond with JSON only — an array of exactly 3 venues:
   };
 
   return (
-    <div style={{ borderBottom: '1px solid ' + BORDER }}>
+    <div style={{ borderBottom: inline ? 'none' : '1px solid ' + BORDER }}>
       <button onClick={() => setOpen(!open)}
         style={{ width: '100%', padding: '13px 20px', background: open ? SURFACE : 'transparent', border: 'none', borderTop: '1px solid ' + BORDER, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

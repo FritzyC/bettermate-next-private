@@ -19,7 +19,7 @@ type Suggestion = {
   first_topics: string;
 };
 
-export default function KineticMatchmaker({ matchId, userId }: { matchId: string; userId: string }) {
+export default function KineticMatchmaker({ matchId, userId, inline = false }: { matchId: string; userId: string; inline?: boolean }) {
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);

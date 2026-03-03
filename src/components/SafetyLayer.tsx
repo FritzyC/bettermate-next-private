@@ -16,8 +16,8 @@ const SUCCESS = '#4CAF7D';
 const ERROR = '#C0444B';
 const WARNING = '#D4A843';
 
-export default function SafetyLayer({ matchId, userId, venueName, venueAddress, finalTime }: {
-  matchId: string; userId: string; venueName?: string; venueAddress?: string; finalTime?: string;
+export default function SafetyLayer({ matchId, userId, venueName, venueAddress, finalTime, inline = false }: {
+  matchId: string; userId: string; venueName?: string; venueAddress?: string; finalTime?: string; inline?: boolean;
 }) {
   const [settings, setSettings] = useState<any>(null);
   const [open, setOpen] = useState(false);
@@ -104,7 +104,7 @@ export default function SafetyLayer({ matchId, userId, venueName, venueAddress, 
   const statusLabel = checkedIn ? 'Checked in — safe' : timerActive ? 'Timer active — ' + getTimeLeft() : hasContact ? 'Contact saved' : 'Set up safety';
 
   return (
-    <div style={{ borderBottom: '1px solid ' + BORDER }}>
+    <div style={{ borderBottom: inline ? 'none' : '1px solid ' + BORDER }}>
       <button onClick={() => setOpen(!open)}
         style={{ width: '100%', padding: '13px 20px', background: open ? SURFACE : 'transparent', border: 'none', borderTop: '1px solid ' + BORDER, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

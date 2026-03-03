@@ -16,7 +16,7 @@ const BRAND = 'linear-gradient(135deg, #7B1C4A, #4A0F2E)';
 
 type BondStatus = 'none' | 'pending_sent' | 'pending_received' | 'bonded' | 'declined';
 
-export default function CommitmentBond({ matchId, userId }: { matchId: string; userId: string }) {
+export default function CommitmentBond({ matchId, userId, inline = false }: { matchId: string; userId: string; inline?: boolean }) {
   const [status, setStatus] = useState<BondStatus>('none');
   const [bondedAt, setBondedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

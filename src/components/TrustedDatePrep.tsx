@@ -107,7 +107,7 @@ type ActiveContent = {
   intent?: string;
 };
 
-export default function TrustedDatePrep({ matchId, userId }: { matchId: string; userId: string }) {
+export default function TrustedDatePrep({ matchId, userId, inline = false }: { matchId: string; userId: string; inline?: boolean }) {
   const [open, setOpen] = useState(false);
   const [balance, setBalance] = useState(0);
   const [appliedPacks, setAppliedPacks] = useState<string[]>([]);
@@ -254,7 +254,7 @@ Respond with JSON only: { "icebreakers": ["...", "...", "...", "...", "..."] }`
   if (loading) return null;
 
   return (
-    <div style={{ borderBottom: '1px solid ' + BORDER }}>
+    <div style={{ borderBottom: inline ? 'none' : '1px solid ' + BORDER }}>
       <button onClick={() => { setOpen(!open); if (!open) trackEvent('shop_opened', {}, matchId); }}
         style={{ width: '100%', padding: '13px 20px', background: open ? SURFACE : 'transparent', border: 'none', borderTop: '1px solid ' + BORDER, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
