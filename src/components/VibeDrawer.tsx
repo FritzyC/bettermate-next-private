@@ -11,6 +11,7 @@ import TrustedDatePrep from '@/components/TrustedDatePrep';
 import ShowUpStreak from '@/components/ShowUpStreak';
 import CoachInsights from '@/components/CoachInsights';
 import IntegrityScore from '@/components/IntegrityScore';
+import VibeRecommendation from '@/components/VibeRecommendation';
 
 const SURFACE = '#2A1648';
 const ELEVATED = '#342058';
@@ -60,6 +61,15 @@ export default function VibeDrawer({
   userId: string;
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
+
+  function navigateTo(sectionId: string) {
+    setExpanded(sectionId);
+    logEvent('vibe_section_opened', { section: sectionId }, matchId);
+    setTimeout(() => {
+      const el = document.getElementById('vibe-section-' + sectionId);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -139,6 +149,9 @@ export default function VibeDrawer({
 
         {/* Accordion list */}
         <div style={{ overflowY: 'auto', flex: 1, padding: '8px 0 24px' }}>
+          <div style={{ padding: '12px 16px 4px' }}>
+            <VibeRecommendation matchId={matchId} userId={userId} onNavigate={navigateTo} />
+          </div>
           {SECTIONS.map((section) => {
             const isOpen = expanded === section.id;
             return (

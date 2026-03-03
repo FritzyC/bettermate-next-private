@@ -57,7 +57,9 @@ export type EventType =
   | 'integrity_score_changed'
   | 'integrity_visibility_tier_assigned'
   | 'integrity_visibility_restored'
-  | 'integrity_score_viewed';
+  | 'integrity_score_viewed'
+  | 'vibe_recommendation_shown'
+  | 'vibe_recommendation_tapped';
 
 export async function trackEvent(
   eventType: EventType,

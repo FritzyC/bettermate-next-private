@@ -395,6 +395,14 @@ Respond with JSON only — an array of exactly 3 venues:
                       style={{ background: isMine ? 'rgba(123,28,74,0.2)' : ELEVATED, border: '1px solid ' + (isMine ? '#7B1C4A' : BORDER), borderRadius: 14, padding: '16px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                         <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{venue.name}</div>
+                        <ExplainableMatch
+                          matchId={matchId}
+                          userId={userId}
+                          venueId={venue.place_id || venue.name}
+                          venueName={venue.name}
+                          venueCategory={venue.type || venue.category || 'venue'}
+                          isMidpoint={true}
+                        />
                         <div style={{ display: 'flex', gap: 4 }}>
                           {isMine && <span style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(123,28,74,0.3)', borderRadius: 10, color: '#f0a0c0' }}>Your pick</span>}
                           {isTheirs && <span style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(76,175,125,0.2)', borderRadius: 10, color: SUCCESS }}>Their pick</span>}
