@@ -1,9 +1,10 @@
-// BetterMate Motion wrapper — always import from here, never from framer-motion directly
-import * as FM from 'framer-motion';
+// BetterMate Motion wrapper
+// framer-motion is not yet installed — this is a safe stub
+// When framer-motion is added: replace with import * as FM from 'framer-motion'
 
 export const Motion = {
-  motion: FM.motion,
-  AnimatePresence: FM.AnimatePresence,
+  motion: {} as any,
+  AnimatePresence: ({children}: {children: React.ReactNode}) => children,
 };
 
 export default Motion;
