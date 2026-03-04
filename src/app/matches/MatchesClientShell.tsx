@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useOnboardingGuard } from '@/hooks/useOnboardingGuard';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabaseClient';
 
 export default function MatchesClientShell() {
+  useOnboardingGuard();
   const router = useRouter();
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

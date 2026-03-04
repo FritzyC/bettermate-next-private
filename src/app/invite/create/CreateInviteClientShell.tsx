@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useOnboardingGuard } from '@/hooks/useOnboardingGuard';
 import { getSupabase } from '@/lib/supabaseClient';
 
 export default function CreateInviteClientShell() {
+  useOnboardingGuard();
   const [loading, setLoading] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabase } from '@/lib/supabaseClient';
+import { useOnboardingGuard } from '@/hooks/useOnboardingGuard';
 
 export default function DashboardPage() {
   const router = useRouter();
+  useOnboardingGuard();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
