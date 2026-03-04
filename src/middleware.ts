@@ -7,6 +7,7 @@ const PUBLIC_PREFIXES = [
   "/api",
   "/_next",
   "/favicon",
+  "/admin",
 ]
 
 function isPublic(pathname: string): boolean {
