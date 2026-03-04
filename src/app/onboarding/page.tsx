@@ -1,6 +1,5 @@
-import React from 'react';
-import OnboardingClient from './OnboardingClient';
-
+'use client';
+import OnboardingFlow from '@/components/OnboardingFlow';
 export default function OnboardingPage() {
-  return <OnboardingClient />;
+  return <OnboardingFlow />;
 }
