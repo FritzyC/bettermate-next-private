@@ -67,7 +67,8 @@ export type EventType =
   | 'store_purchase_completed'
   | 'song_share_sent'
   | 'song_share_opened'
-  | 'venue_quality_score_updated';
+  | 'venue_quality_score_updated'
+  | 'preference_model_updated';
 export async function trackEvent(
   eventType: EventType,
   payload: Record<string, any> = {},

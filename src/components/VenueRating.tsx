@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { getSupabase } from '@/lib/supabaseClient';
 import { trackEvent } from '@/lib/bm/track';
+import { updatePreferences } from '@/components/PreferenceLearning';
 
 const SURFACE = '#2A1648';
 const ELEVATED = '#342058';
@@ -121,6 +122,9 @@ export default function VenueRating({
       rating,
       tags: selectedTags,
     }, matchId);
+
+    // Update preference model
+    await updatePreferences(userId, rating, selectedTags, 'venue', matchId);
 
     setDone(true);
     setSubmitting(false);
