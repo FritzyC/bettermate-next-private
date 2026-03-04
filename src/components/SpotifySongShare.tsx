@@ -112,7 +112,7 @@ export default function SpotifySongShare({
   function connectSpotify() {
     trackEvent('spotify_connect_started', {});
     const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
-    const redirect = encodeURIComponent(window.location.origin + '/api/spotify/callback');
+    const redirect = encodeURIComponent(window.location.origin.replace('localhost', '127.0.0.1') + '/api/spotify/callback');
     const scopes = encodeURIComponent('user-read-private user-read-email');
     const state = encodeURIComponent(userId + '|' + matchId);
     window.location.href =
