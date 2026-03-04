@@ -68,7 +68,23 @@ export type EventType =
   | 'song_share_sent'
   | 'song_share_opened'
   | 'venue_quality_score_updated'
-  | 'preference_model_updated';
+  | 'preference_model_updated'
+  | 'activity_opened'
+  | 'activity_selected'
+  | 'activity_suggestions_shown'
+  | 'activity_match_invite_sent'
+  | 'group_created'
+  | 'group_invited'
+  | 'group_joined'
+  | 'group_plan_generated'
+  | 'group_vote_cast'
+  | 'group_checkin_confirmed'
+  | 'ritual_enabled'
+  | 'ritual_weekly_pack_shown'
+  | 'ritual_plan_started'
+  | 'ritual_attended'
+  | 'ritual_skipped'
+  | 'plan_fairness_explainer_opened';
 export async function trackEvent(
   eventType: EventType,
   payload: Record<string, any> = {},
