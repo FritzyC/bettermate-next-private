@@ -44,6 +44,7 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
   const [selectedVenue, setSelectedVenue] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showCheckin, setShowCheckin] = useState(false);
+  const [showRating, setShowRating] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [safetyFlag, setSafetyFlag] = useState(false);
