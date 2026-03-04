@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { getSupabase } from '@/lib/supabaseClient';
 import { trackEvent } from '@/lib/bm/track';
+import VenueRating from '@/components/VenueRating';
 import ExplainableMatch from '@/components/ExplainableMatch';
 
 const SURFACE = '#2A1648';
@@ -262,6 +263,7 @@ Respond with JSON only — an array of exactly 3 venues:
     setPlan(updated);
     await trackEvent('plan_checkin_prompt_shown', {}, matchId);
       await trackEvent('plan_checkin_confirmed', { showed, outcome: showed ? 'met' : 'rescheduled', safety_flag: false }, matchId);
+      if (showed) setShowRating(true);
     setActing(false);
     setShowCheckin(false);
   }
