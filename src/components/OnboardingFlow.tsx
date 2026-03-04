@@ -264,6 +264,8 @@ export default function OnboardingFlow() {
       if (e1) throw e1;
       const { error:e2 } = await supabase.from('user_values').upsert({ user_id:user.id, ...(values as Values), updated_at:new Date().toISOString() },{ onConflict:'user_id' });
       if (e2) throw e2;
+      await supabase.from('integrity_scores').upsert({ user_id:user.id, score:60, tier:3 },{ onConflict:'user_id', ignoreDuplicates:true });
+      await supabase.from('show_up_streaks').upsert({ user_id:user.id, current_streak:0, longest_streak:0, freeze_used:false, freeze_available:true },{ onConflict:'user_id', ignoreDuplicates:true });
       setStep('entry');
     } catch(e:unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');
