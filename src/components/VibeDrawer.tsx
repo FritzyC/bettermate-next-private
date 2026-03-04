@@ -12,6 +12,9 @@ import ShowUpStreak from '@/components/ShowUpStreak';
 import CoachInsights from '@/components/CoachInsights';
 import IntegrityScore from '@/components/IntegrityScore';
 import VibeRecommendation from '@/components/VibeRecommendation';
+import ActivityGraph from '@/components/ActivityGraph';
+import MicroGroup from '@/components/MicroGroup';
+import RecurringRituals from '@/components/RecurringRituals';
 
 const SURFACE = '#2A1648';
 const ELEVATED = '#342058';
@@ -47,6 +50,9 @@ const SECTIONS = [
   { id: 'streak', icon: '🔥', title: 'Show Up Streak', desc: 'Your consistency, your identity' },
   { id: 'coach', icon: '🧠', title: 'Coach Insights', desc: 'What your patterns say about you' },
   { id: 'integrity', icon: '⬡', title: 'Integrity Score', desc: 'Your visibility and trust signal' },
+  { id: 'activity', icon: '🎯', title: 'Activity Graph', desc: 'Plan-first discovery' },
+  { id: 'groups', icon: '👥', title: 'Micro-Groups', desc: 'Plan with 2–6 people' },
+  { id: 'rituals', icon: '🔁', title: 'Recurring Rituals', desc: 'Weekly social anchors' },
 ];
 
 export default function VibeDrawer({
@@ -211,6 +217,21 @@ export default function VibeDrawer({
                     {section.id === 'safety' && (
                       <div style={{ padding: '0 0 4px' }}>
                         <SafetyLayer matchId={matchId} userId={userId} inline />
+                      </div>
+                    )}
+                    {section.id === 'activity' && (
+                      <div style={{ padding: '0 0 4px' }}>
+                        <ActivityGraph userId={userId} />
+                      </div>
+                    )}
+                    {section.id === 'groups' && (
+                      <div style={{ padding: '0 0 4px' }}>
+                        <MicroGroup userId={userId} />
+                      </div>
+                    )}
+                    {section.id === 'rituals' && (
+                      <div style={{ padding: '0 0 4px' }}>
+                        <RecurringRituals userId={userId} />
                       </div>
                     )}
                     {section.id === 'integrity' && (

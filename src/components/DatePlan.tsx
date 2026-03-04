@@ -3,6 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { getSupabase } from '@/lib/supabaseClient';
 import { trackEvent } from '@/lib/bm/track';
+import { buildFairnessPrompt, getFairnessColor, getFairnessIcon } from '@/lib/geofairness';
+import { getTopPreferences } from '@/components/PreferenceLearning';
+import { getPreferences } from '@/components/PreferenceLearning';
 import VenueRating from '@/components/VenueRating';
 import ExplainableMatch from '@/components/ExplainableMatch';
 
@@ -45,6 +48,8 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showCheckin, setShowCheckin] = useState(false);
   const [showRating, setShowRating] = useState(false);
+  const [travelMode, setTravelMode] = useState<'car'|'transit'|'walk'>('car');
+  const [fairnessOpen, setFairnessOpen] = useState<string|null>(null);
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [safetyFlag, setSafetyFlag] = useState(false);
@@ -99,47 +104,23 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
   }
 
   async function generateVenues() {
+    // Load user preferences for tag hints
+    let preferredTags: string[] = [];
+    try {
+      const prefs = await getPreferences(userId);
+      if (prefs) preferredTags = await getTopPreferences(prefs, 3);
+    } catch {}
     if (!locationInput.trim()) return;
     setGeneratingVenues(true);
     const supabase = getSupabase();
     if (!supabase) return;
 
-    const { data: myFP } = await supabase.from('user_fingerprint').select('*').eq('id', userId).single();
-    const otherId = plan.user_a_id === userId ? plan.user_b_id : plan.user_a_id;
-    const { data: theirFP } = await supabase.from('user_fingerprint').select('*').eq('id', otherId).single();
-
-    const prompt = `You are BetterMate's venue suggestion engine. Suggest 3 real public venues for a first date.
-
-User A location: ${locationInput}
-User A interests/hobbies: ${myFP?.hobbies?.join(', ') || 'not provided'}
-User A music genres: ${myFP?.music_genres?.join(', ') || 'not provided'}
-User A narrative themes: ${myFP?.narrative_themes?.join(', ') || 'not provided'}
-
-User B interests: ${theirFP?.hobbies?.join(', ') || 'not provided'}
-User B music: ${theirFP?.music_genres?.join(', ') || 'not provided'}
-
-Rules:
-- All venues must be public, safe, well-lit, daytime or early evening appropriate
-- Prefer midpoint locations when possible
-- Categories: coffee shop, bookstore cafe, casual dining, park, museum, art gallery, market
-- If both share a music interest, you may suggest a live music venue as 1 of the 3
-- Each venue must have a clear reason tied to their shared interests
-
-Respond with JSON only — an array of exactly 3 venues:
-[
-  {
-    "id": "v1",
-    "name": "Venue Name",
-    "address": "Full address",
-    "category": "coffee shop",
-    "why": "One warm sentence explaining why this fits both of them specifically",
-    "midpoint_note": "Approximately equidistant from both" or "Slightly closer to one user because...",
-    "safety_score": "high",
-    "suggested_times": ["Saturday 2pm", "Sunday 11am", "Sunday 3pm"],
-    "special_event": false,
-    "event_note": null
-  }
-]`;
+    // Build fairness prompt
+    const [fingerprintA, fingerprintB] = await Promise.all([
+      supabase.from('user_fingerprint').select('hobbies,music').eq('user_id', userId).single().then(r => r.data),
+      supabase.from('user_fingerprint').select('hobbies,music').eq('user_id', match?.user_b_id === userId ? match?.user_a_id : match?.user_b_id).single().then(r => r.data),
+    ]);
+    const prompt = buildFairnessPrompt(locationInput, locationInput, travelMode, fingerprintA, fingerprintB, preferredTags);
 
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -168,7 +149,7 @@ Respond with JSON only — an array of exactly 3 venues:
         sender_user_id: userId,
         body: '📍 BetterMate suggested 3 venues for your date. Open the Date Plan to vote.',
       });
-      await trackEvent('plan_venues_presented', { count: 3 }, matchId);
+      await trackEvent('plan_venues_presented', { count: venues.length, mode: 'fairness_2', sources: ['a_area','b_area','midpoint'] }, matchId);
     } catch (_) {}
     setGeneratingVenues(false);
     setShowLocationInput(false);
@@ -198,7 +179,8 @@ Respond with JSON only — an array of exactly 3 venues:
       finalUpdate = { ...update, status: 'venue_mismatch' };
       await trackEvent('plan_venue_mismatch', {}, matchId);
     } else {
-      await trackEvent('plan_venue_selected', { venue_id: venueId }, matchId);
+      const selVenue = plan?.venue_options?.find((v: any) => v.id === venueId);
+await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: selVenue?.fairness?.bucket || 'unknown' }, matchId);
     }
 
     const { data: updated } = await supabase.from('date_plans').update(finalUpdate).eq('match_id', matchId).select().single();
@@ -370,6 +352,14 @@ Respond with JSON only — an array of exactly 3 venues:
               <input value={locationInput} onChange={e => setLocationInput(e.target.value)}
                 placeholder="Your city or neighborhood (e.g. Brooklyn, NY)"
                 style={{ width: '100%', padding: '13px 16px', background: ELEVATED, border: '1px solid ' + BORDER, borderRadius: 12, color: TEXT, fontSize: 14, outline: 'none', boxSizing: 'border-box', marginBottom: 12 }} />
+              <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                {(['car', 'transit', 'walk'] as const).map(mode => (
+                  <button key={mode} onClick={() => setTravelMode(mode)}
+                    style={{ flex: 1, padding: '7px 4px', background: travelMode === mode ? 'rgba(201,169,110,0.15)' : 'transparent', border: '1px solid ' + (travelMode === mode ? '#C9A96E' : '#5A3A8A'), borderRadius: 8, color: travelMode === mode ? '#C9A96E' : '#7A6A96', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                    {mode === 'car' ? '🚗 Drive' : mode === 'transit' ? '🚌 Transit' : '🚶 Walk'}
+                  </button>
+                ))}
+              </div>
               <button onClick={generateVenues} disabled={!locationInput.trim() || generatingVenues}
                 style={{ width: '100%', padding: '13px', background: locationInput.trim() ? BRAND : ELEVATED, border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 600, cursor: locationInput.trim() ? 'pointer' : 'not-allowed' }}>
                 {generatingVenues ? '🔍 Finding perfect venues...' : 'Suggest 3 Venues'}
@@ -414,6 +404,28 @@ Respond with JSON only — an array of exactly 3 venues:
                       <div style={{ fontSize: 12, color: MUTED, marginBottom: 8 }}>{venue.address}</div>
                       <div style={{ fontSize: 12, color: TEXT2, lineHeight: 1.5, marginBottom: 8 }}>✨ {venue.why}</div>
                       <div style={{ fontSize: 11, color: MUTED }}>{venue.midpoint_note}</div>
+                      {venue.fairness && (
+                        <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 11, padding: '3px 8px', background: getFairnessColor(venue.fairness.bucket) + '20', border: '1px solid ' + getFairnessColor(venue.fairness.bucket) + '50', borderRadius: 12, color: getFairnessColor(venue.fairness.bucket), fontWeight: 600 }}>
+                            {getFairnessIcon(venue.fairness.bucket)} {venue.fairness.label}
+                          </span>
+                          {venue.travel_time_a_bucket && (
+                            <span style={{ fontSize: 10, color: '#7A6A96' }}>You: {venue.travel_time_a_bucket}</span>
+                          )}
+                          {venue.travel_time_b_bucket && (
+                            <span style={{ fontSize: 10, color: '#7A6A96' }}>Them: {venue.travel_time_b_bucket}</span>
+                          )}
+                          <button onClick={e => { e.stopPropagation(); setFairnessOpen(fairnessOpen === venue.id ? null : venue.id); trackEvent('plan_fairness_explainer_opened', { venue_id: venue.id }, matchId); }}
+                            style={{ background: 'none', border: 'none', color: '#7A6A96', fontSize: 10, cursor: 'pointer', textDecoration: 'underline' }}>
+                            Why fair?
+                          </button>
+                        </div>
+                      )}
+                      {fairnessOpen === venue.id && venue.fairness?.explanation && (
+                        <div style={{ marginTop: 6, padding: '8px 10px', background: 'rgba(255,255,255,0.03)', borderRadius: 8, fontSize: 11, color: '#B8A8D4', lineHeight: 1.5 }}>
+                          {venue.fairness.explanation}
+                        </div>
+                      )}
                       {venue.special_event && venue.event_note && (
                         <div style={{ marginTop: 8, padding: '6px 10px', background: 'rgba(201,169,110,0.1)', borderRadius: 8, fontSize: 11, color: GOLD }}>🎵 {venue.event_note}</div>
                       )}
