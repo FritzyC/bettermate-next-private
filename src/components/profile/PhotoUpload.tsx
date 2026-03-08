@@ -21,6 +21,7 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
   const slotRef = useRef<number>(0)
 
   const upload = useCallback(async (file: File, slot: number) => {
+    console.log('PHOTO UPLOAD userId:', userId, 'file:', file.name)
     if (!ALLOWED.includes(file.type)) { setErrors(e => ({ ...e, [slot]: 'JPG, PNG or WebP only' })); return }
     if (file.size > MAX_SIZE) { setErrors(e => ({ ...e, [slot]: 'Max 5MB' })); return }
     setUploading(slot); setErrors(e => { const n = { ...e }; delete n[slot]; return n })

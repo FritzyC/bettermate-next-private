@@ -210,7 +210,7 @@ function Completion({ fp, values, onComplete, loading, photos, onPhotosChange, u
       <div style={{marginBottom:20,padding:'16px',background:'rgba(124,58,237,0.06)',border:'1px solid rgba(124,58,237,0.12)',borderRadius:14}}>
         <p style={{margin:'0 0 4px',fontSize:13,fontWeight:600,color:'#fff'}}>Profile Photos</p>
         <p style={{margin:'0 0 14px',fontSize:12,color:'rgba(196,181,253,0.6)'}}>Help them recognise you when you meet</p>
-        <PhotoUpload userId={userId} existingPhotos={photos} onPhotosChange={onPhotosChange} />
+        {userId ? <PhotoUpload userId={userId} existingPhotos={photos} onPhotosChange={onPhotosChange} /> : <p style={{color:'#9d84d0',fontSize:13,margin:0}}>Loading…</p>}
       </div>
       <Btn onClick={onComplete} disabled={loading}>{loading ? 'Saving your profile...' : 'Enter BetterMate →'}</Btn>
     </Shell>
