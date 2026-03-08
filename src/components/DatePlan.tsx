@@ -117,8 +117,8 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
 
     // Build fairness prompt
     const [fingerprintA, fingerprintB] = await Promise.all([
-      supabase.from('user_fingerprint').select('hobbies,music').eq('user_id', userId).single().then(r => r.data),
-      supabase.from('user_fingerprint').select('hobbies,music').eq('user_id', plan?.user_b_id === userId ? plan?.user_a_id : plan?.user_b_id).single().then(r => r.data),
+      supabase.from('user_fingerprint').select('hobbies,music').eq('id', userId).single().then(r => r.data),
+      supabase.from('user_fingerprint').select('hobbies,music').eq('id', plan?.user_b_id === userId ? plan?.user_a_id : plan?.user_b_id).single().then(r => r.data),
     ]);
     const prompt = buildFairnessPrompt(locationInput, locationInput, travelMode, fingerprintA, fingerprintB, preferredTags);
 

@@ -55,9 +55,9 @@ async function fetchMetrics(tf: Timeframe): Promise<Metrics> {
     catch { return {data:null,count:0} }
   }
   const [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w] = await Promise.all([
-    safe(()=>supabase.from('user_fingerprint').select('user_id',{count:'exact',head:true})),
-    safe(()=>supabase.from('user_fingerprint').select('user_id',{count:'exact',head:true}).gte('created_at',start)),
-    safe(()=>supabase.from('user_fingerprint').select('user_id',{count:'exact',head:true}).gte('created_at',prevStart).lt('created_at',start)),
+    safe(()=>supabase.from('user_fingerprint').select('id',{count:'exact',head:true})),
+    safe(()=>supabase.from('user_fingerprint').select('id',{count:'exact',head:true}).gte('created_at',start)),
+    safe(()=>supabase.from('user_fingerprint').select('id',{count:'exact',head:true}).gte('created_at',prevStart).lt('created_at',start)),
     safe(()=>supabase.from('user_fingerprint').select('user_id,onboarding_complete')),
     safe(()=>supabase.from('matches').select('id',{count:'exact',head:true}).gte('created_at',start).eq('status','active')),
     safe(()=>supabase.from('matches').select('id',{count:'exact',head:true}).gte('created_at',prevStart).lt('created_at',start).eq('status','active')),

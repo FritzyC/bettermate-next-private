@@ -269,12 +269,12 @@ export default function OnboardingFlow() {
     try {
       const { data:{ user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const { error:e1 } = await supabase.from('user_fingerprint').upsert({ user_id:user.id, music_genres:fp.music, hobbies:fp.hobbies, onboarding_complete:true, updated_at:new Date().toISOString() },{ onConflict:'user_id' });
+      const { error:e1 } = await supabase.from('user_fingerprint').upsert({ id:user.id, music_genres:fp.music, hobbies:fp.hobbies, onboarding_complete:true, updated_at:new Date().toISOString() },{ onConflict:'id' });
       if (e1) throw e1;
-      const { error:e2 } = await supabase.from('user_values').upsert({ user_id:user.id, ...(values as Values), updated_at:new Date().toISOString() },{ onConflict:'user_id' });
+      const { error:e2 } = await supabase.from('user_values').upsert({ id:user.id, ...(values as Values), updated_at:new Date().toISOString() },{ onConflict:'id' });
       if (e2) throw e2;
-      await supabase.from('integrity_scores').upsert({ user_id:user.id, score:60, tier:3 },{ onConflict:'user_id', ignoreDuplicates:true });
-      await supabase.from('show_up_streaks').upsert({ user_id:user.id, current_streak:0, longest_streak:0, freeze_used:false, freeze_available:true },{ onConflict:'user_id', ignoreDuplicates:true });
+      await supabase.from('integrity_scores').upsert({ id:user.id, score:60, tier:3 },{ onConflict:'id', ignoreDuplicates:true });
+      await supabase.from('show_up_streaks').upsert({ id:user.id, current_streak:0, longest_streak:0, freeze_used:false, freeze_available:true },{ onConflict:'id', ignoreDuplicates:true });
       setStep('entry');
     } catch(e:unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');

@@ -36,7 +36,7 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
       const { data: { publicUrl } } = supabase.storage.from('profile-photos').getPublicUrl(path)
       const next = [...photos]; next[slot] = publicUrl
       const clean = next.filter(Boolean)
-      const { error: dbErr } = await supabase.from('user_fingerprint').update({ photos: clean }).eq('user_id', userId)
+      const { error: dbErr } = await supabase.from('user_fingerprint').update({ photos: clean }).eq('id', userId)
       if (dbErr) throw dbErr
       setPhotos(next); onPhotosChange?.(clean)
     } catch (err) {
@@ -51,7 +51,7 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
       if (old) await supabase.storage.from('profile-photos').remove([old])
       const next = [...photos]; next[slot] = ''
       const clean = next.filter(Boolean)
-      await supabase.from('user_fingerprint').update({ photos: clean }).eq('user_id', userId)
+      await supabase.from('user_fingerprint').update({ photos: clean }).eq('id', userId)
       setPhotos(next); onPhotosChange?.(clean)
       } catch (err) { console.error('remove photo error', err) }
   }, [photos, userId, onPhotosChange])

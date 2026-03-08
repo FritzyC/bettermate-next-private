@@ -15,7 +15,7 @@ export function useUserAvatar(userId: string | null | undefined): AvatarData {
       setLoading(true)
       try {
         const [{ data: fp }, { data: profile }] = await Promise.all([
-          supabase.from('user_fingerprint').select('photos').eq('user_id', userId).maybeSingle(),
+          supabase.from('user_fingerprint').select('photos').eq('id', userId).maybeSingle(),
           supabase.from('profiles').select('full_name,display_name,email').eq('id', userId).maybeSingle(),
         ])
         if (!cancelled) {

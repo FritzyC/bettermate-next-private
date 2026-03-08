@@ -65,7 +65,7 @@ export default function ActivityGraph({ userId }: { userId: string }) {
 
       const prefs = await getPreferences(userId);
       const preferredTags = prefs ? getTopPreferences(prefs, 3) : [];
-      const { data: fp } = await supabase.from('user_fingerprint').select('hobbies,music').eq('user_id', userId).single();
+      const { data: fp } = await supabase.from('user_fingerprint').select('hobbies,music').eq('id', userId).single();
       const activity = activities.find(a => a.id === selected);
 
       const prompt = `${buildFairnessPrompt(location, location, travelMode as any, fp, null, preferredTags)}
