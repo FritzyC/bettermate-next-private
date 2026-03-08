@@ -53,10 +53,10 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // If we can't determine auth status from cookies, let request through.
+  // Client-side guards handle unauthenticated users.
   if (!user) {
-    const loginUrl = new URL("/auth", request.url)
-    loginUrl.searchParams.set("next", pathname)
-    return NextResponse.redirect(loginUrl)
+    return response
   }
 
   if (!pathname.startsWith("/onboarding")) {
