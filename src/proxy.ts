@@ -63,7 +63,7 @@ export async function proxy(request: NextRequest) {
     const { data: fingerprint } = await supabase
       .from("user_fingerprint")
       .select("onboarding_complete")
-      .eq("user_id", user.id)
+      .eq("id", user.id)
       .maybeSingle()
 
     const onboardingComplete = fingerprint?.onboarding_complete === true
