@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { supabase } from '@/lib/supabase/client'
+import PhotoUpload from '@/components/profile/PhotoUpload';
 import { useRouter } from 'next/navigation';
 
 type Step = 'welcome' | 'compact' | 'fingerprint' | 'values' | 'completion' | 'entry';
@@ -175,7 +176,7 @@ function ValuesQ({ values, setValues, onNext }: { values:Partial<Values>; setVal
   );
 }
 
-function Completion({ fp, values, onComplete, loading }: { fp:Fingerprint; values:Partial<Values>; onComplete:()=>void; loading:boolean }) {
+function Completion({ fp, values, onComplete, loading, photos, onPhotosChange, userId }: { fp:Fingerprint; values:Partial<Values>; onComplete:()=>void; loading:boolean; photos:string[]; onPhotosChange:(urls:string[])=>void; userId:string }) {
   const checks = [{ label:'Values', done: Object.keys(values).length>=5 },{ label:'Interests', done: fp.hobbies.length>=3 },{ label:'Music', done: fp.music.length>=1 }];
   const pct = Math.round((checks.filter(c=>c.done).length / (checks.length+2))*100);
   return (
@@ -205,6 +206,11 @@ function Completion({ fp, values, onComplete, loading }: { fp:Fingerprint; value
             <span style={{ color:'#1a0f2e' }}>○</span>{item}
           </div>
         ))}
+      </div>
+      <div style={{marginBottom:20,padding:'16px',background:'rgba(124,58,237,0.06)',border:'1px solid rgba(124,58,237,0.12)',borderRadius:14}}>
+        <p style={{margin:'0 0 4px',fontSize:13,fontWeight:600,color:'#fff'}}>Profile Photos</p>
+        <p style={{margin:'0 0 14px',fontSize:12,color:'rgba(196,181,253,0.6)'}}>Help them recognise you when you meet</p>
+        <PhotoUpload userId={userId} existingPhotos={photos} onPhotosChange={onPhotosChange} />
       </div>
       <Btn onClick={onComplete} disabled={loading}>{loading ? 'Saving your profile...' : 'Enter BetterMate →'}</Btn>
     </Shell>
@@ -243,6 +249,8 @@ export default function OnboardingFlow() {
   const [fp, setFp] = useState<Fingerprint>({ music:[], hobbies:[] });
   const [values, setValues] = useState<Partial<Values>>({});
   const [loading, setLoading] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [hasMatch, setHasMatch] = useState(false);
   const [error, setError] = useState<string|null>(null);
 
@@ -250,6 +258,7 @@ export default function OnboardingFlow() {
     (async () => {
       const { data:{ user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/login'); return; }
+      setCurrentUserId(user.id);
       const { count } = await supabase.from('matches').select('id',{count:'exact',head:true}).or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`).eq('status','active');
       setHasMatch((count??0)>0);
     })();
@@ -280,7 +289,7 @@ export default function OnboardingFlow() {
       {step==='compact'    && <Compact onNext={()=>setStep('fingerprint')} />}
       {step==='fingerprint'&& <Fingerprint fp={fp} setFp={setFp} onNext={()=>setStep('values')} />}
       {step==='values'     && <ValuesQ values={values} setValues={setValues} onNext={()=>setStep('completion')} />}
-      {step==='completion' && <Completion fp={fp} values={values} onComplete={save} loading={loading} />}
+      {step==='completion' && <Completion fp={fp} values={values} onComplete={save} photos={photos} onPhotosChange={setPhotos} userId={currentUserId} loading={loading} />}
       {step==='entry'      && <Entry hasMatch={hasMatch} />}
     </>
   );
