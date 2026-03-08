@@ -24,9 +24,9 @@ const STEPS: Step[] = ['welcome','compact','fingerprint','values','completion','
 const S = {
   shell: { minHeight:'100vh', background:'linear-gradient(160deg,#06030f 0%,#0e0720 50%,#110828 100%)', display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', padding:'60px 24px 40px' } as React.CSSProperties,
   wrap: { width:'100%', maxWidth:480 } as React.CSSProperties,
-  eyebrow: { margin:'0 0 12px', fontSize:11, letterSpacing:'0.16em', textTransform:'uppercase' as const, color:'#4a3a6a', fontFamily:'system-ui,sans-serif' } as React.CSSProperties,
+  eyebrow: { margin:'0 0 12px', fontSize:11, letterSpacing:'0.16em', textTransform:'uppercase' as const, color:'#9d84d0', fontFamily:'system-ui,sans-serif' } as React.CSSProperties,
   h1: { fontFamily:"'Georgia',serif", fontSize:30, fontWeight:400, color:'#f0e6ff', margin:'0 0 14px', letterSpacing:'-0.02em', lineHeight:1.25 } as React.CSSProperties,
-  body: { fontFamily:'system-ui,sans-serif', fontSize:14, color:'#7c6a9a', lineHeight:1.65, margin:'0 0 28px' } as React.CSSProperties,
+  body: { fontFamily:'system-ui,sans-serif', fontSize:14, color:'#b09dd4', lineHeight:1.65, margin:'0 0 28px' } as React.CSSProperties,
   card: { background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.12)', borderRadius:16, padding:'24px 28px', marginBottom:36 } as React.CSSProperties,
 };
 
@@ -43,7 +43,7 @@ function ProgressBar({ step }: { step: Step }) {
 
 function Chip({ label, active, disabled, onClick }: { label:string; active:boolean; disabled:boolean; onClick:()=>void }) {
   return (
-    <button onClick={() => !disabled && onClick()} style={{ padding:'10px 16px', borderRadius:50, border:`1.5px solid ${active ? '#7c3aed' : '#2a1645'}`, background: active ? 'rgba(124,58,237,0.12)' : 'transparent', color: active ? '#c4b5fd' : disabled ? '#2a1a45' : '#6a5a8a', fontSize:13, fontFamily:'system-ui,sans-serif', cursor: disabled ? 'not-allowed' : 'pointer', transition:'all 0.15s ease' }}>
+    <button onClick={() => !disabled && onClick()} style={{ padding:'10px 16px', borderRadius:50, border:`1.5px solid ${active ? '#7c3aed' : '#2a1645'}`, background: active ? 'rgba(124,58,237,0.12)' : 'transparent', color: active ? '#c4b5fd' : disabled ? '#3a2a65' : '#a08cc0', fontSize:13, fontFamily:'system-ui,sans-serif', cursor: disabled ? 'not-allowed' : 'pointer', transition:'all 0.15s ease' }}>
       {label}
     </button>
   );
@@ -111,10 +111,10 @@ function Compact({ onNext }: { onNext:()=>void }) {
         ))}
       </div>
       <button onClick={() => setAgreed(!agreed)} style={{ display:'flex', alignItems:'center', gap:14, background:'transparent', border:'none', cursor:'pointer', marginBottom:32, padding:0 }}>
-        <div style={{ width:24, height:24, borderRadius:6, border:`2px solid ${agreed ? '#7c3aed' : '#2a1645'}`, background: agreed ? '#7c3aed' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s ease', flexShrink:0 }}>
+        <div style={{ width:24, height:24, borderRadius:6, border:`2px solid ${agreed ? '#7c3aed' : '#6d4fa0'}`, background: agreed ? '#7c3aed' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s ease', flexShrink:0 }}>
           {agreed && <span style={{ color:'#fff', fontSize:14 }}>✓</span>}
         </div>
-        <span style={{ fontFamily:'system-ui,sans-serif', fontSize:15, color: agreed ? '#c4b5fd' : '#3a2a55', transition:'color 0.2s ease' }}>I'm in.</span>
+        <span style={{ fontFamily:'system-ui,sans-serif', fontSize:15, color: agreed ? '#c4b5fd' : '#9d84d0', transition:'color 0.2s ease' }}>I'm in.</span>
       </button>
       <Btn onClick={onNext} disabled={!agreed}>Continue →</Btn>
     </Shell>
@@ -132,7 +132,7 @@ function Fingerprint({ fp, setFp, onNext }: { fp:Fingerprint; setFp:(f:Fingerpri
       <p style={S.body}>Shapes your venue suggestions, activity matches, and compatibility context.</p>
       <div style={{ marginBottom:28 }}>
         <p style={{ fontFamily:'system-ui,sans-serif', fontSize:14, color:'#9a8ab0', margin:'0 0 12px', display:'flex', justifyContent:'space-between' }}>
-          <span>What kind of music moves you?</span><span style={{ color:'#4a3a6a' }}>{fp.music.length}/5</span>
+          <span>What kind of music moves you?</span><span style={{ color:'#9d84d0' }}>{fp.music.length}/5</span>
         </p>
         <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
           {MUSIC.map(g => <Chip key={g} label={g} active={fp.music.includes(g)} disabled={!fp.music.includes(g)&&fp.music.length>=5} onClick={()=>toggleM(g)} />)}
@@ -140,7 +140,7 @@ function Fingerprint({ fp, setFp, onNext }: { fp:Fingerprint; setFp:(f:Fingerpri
       </div>
       <div style={{ marginBottom:32 }}>
         <p style={{ fontFamily:'system-ui,sans-serif', fontSize:14, color:'#9a8ab0', margin:'0 0 12px', display:'flex', justifyContent:'space-between' }}>
-          <span>What do you enjoy doing most?</span><span style={{ color:'#4a3a6a' }}>{fp.hobbies.length}/6</span>
+          <span>What do you enjoy doing most?</span><span style={{ color:'#9d84d0' }}>{fp.hobbies.length}/6</span>
         </p>
         <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
           {INTERESTS.map(h => <Chip key={h} label={h} active={fp.hobbies.includes(h)} disabled={!fp.hobbies.includes(h)&&fp.hobbies.length>=6} onClick={()=>toggleH(h)} />)}
@@ -186,7 +186,7 @@ function Completion({ fp, values, onComplete, loading, photos, onPhotosChange, u
       <p style={S.body}>A complete profile improves your match quality.</p>
       <div style={{ ...S.card, textAlign:'center', marginBottom:24 }}>
         <div style={{ fontSize:52, fontWeight:300, fontFamily:"'Georgia',serif", color:'#c4b5fd', lineHeight:1, marginBottom:6 }}>{pct}%</div>
-        <div style={{ fontSize:11, color:'#4a3a6a', fontFamily:'system-ui,sans-serif', letterSpacing:'0.1em' }}>PROFILE COMPLETE</div>
+        <div style={{ fontSize:11, color:'#9d84d0', fontFamily:'system-ui,sans-serif', letterSpacing:'0.1em' }}>PROFILE COMPLETE</div>
         <div style={{ height:4, background:'#1a0f2e', borderRadius:2, marginTop:16 }}>
           <div style={{ height:'100%', width:`${pct}%`, background:'linear-gradient(90deg,#7c3aed,#db2777)', borderRadius:2, transition:'width 0.8s ease' }} />
         </div>
@@ -233,7 +233,7 @@ function Entry({ hasMatch }: { hasMatch:boolean }) {
           <div style={{ marginBottom:6 }}>Invite Someone You Know</div>
           <div style={{ fontSize:12, fontFamily:'system-ui,sans-serif', color:'#5a4a7a' }}>Send a personal invite link to someone you already trust</div>
         </button>
-        <button onClick={()=>window.location.href='/discover'} style={{ padding:'22px 24px', borderRadius:16, border:'1.5px solid #1a0f2e', background:'rgba(255,255,255,0.02)', color:'#7c6a9a', fontFamily:"'Georgia',serif", fontSize:16, cursor:'pointer', textAlign:'left' }}>
+        <button onClick={()=>window.location.href='/discover'} style={{ padding:'22px 24px', borderRadius:16, border:'1.5px solid #1a0f2e', background:'rgba(255,255,255,0.02)', color:'#b09dd4', fontFamily:"'Georgia',serif", fontSize:16, cursor:'pointer', textAlign:'left' }}>
           <div style={{ marginBottom:6 }}>Enter Blind Chat</div>
           <div style={{ fontSize:12, fontFamily:'system-ui,sans-serif', color:'#3a2a55' }}>Meet people before seeing photos — connection first</div>
         </button>
