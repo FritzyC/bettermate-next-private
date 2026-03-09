@@ -10,6 +10,8 @@ import BondWallet from '@/components/BondWallet';
 import ExpressionSuggester from '@/components/ExpressionSuggester';
 import VibeDrawer from '@/components/VibeDrawer';
 import BlindChat, { isQualifying } from '@/components/BlindChat';
+import DatePlan from '@/components/DatePlan';
+import SpotifySongShare from '@/components/SpotifySongShare';
 
 const COACHING_PROMPTS = [
   { icon: '💬', label: 'Go deeper', message: 'What is something you have been thinking about lately that most people never ask you about?', why: 'Opens a door most people never think to knock on.' },
@@ -33,6 +35,8 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   const [showStore, setShowStore] = useState(false);
   const [showWallet, setShowWallet] = useState(false);
   const [coachingHint, setCoachingHint] = useState<string | null>(null);
+  const [showDatePlan, setShowDatePlan] = useState(false);
+  const [showSpotify, setShowSpotify] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -121,6 +125,14 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
           style={{ padding: '7px 16px', borderRadius: 20, border: '1px solid #5A3A8A', background: vibeOpen ? 'rgba(132,82,184,0.25)' : 'rgba(132,82,184,0.08)', color: '#B48AE8', fontSize: 12, cursor: 'pointer', fontWeight: 600, letterSpacing: '0.02em' }}>
           🎭 Vibe
         </button>
+        <button onClick={() => setShowDatePlan(!showDatePlan)}
+          style={{ padding: '7px 14px', borderRadius: 20, border: '1px solid #3D2860', background: showDatePlan ? 'rgba(124,58,237,0.2)' : 'transparent', color: showDatePlan ? '#c084fc' : '#9a6abf', fontSize: 12, cursor: 'pointer' }}>
+          📅 Plan
+        </button>
+        <button onClick={() => setShowSpotify(!showSpotify)}
+          style={{ padding: '7px 14px', borderRadius: 20, border: '1px solid #3D2860', background: showSpotify ? 'rgba(34,197,94,0.15)' : 'transparent', color: showSpotify ? '#4ade80' : '#9a6abf', fontSize: 12, cursor: 'pointer' }}>
+          🎵
+        </button>
       </div>
 
 
@@ -150,6 +162,20 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       {showSnapshot && (
         <div style={{ flexShrink: 0, maxHeight: '42vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
           <CompatibilitySnapshot matchId={matchId} />
+        </div>
+      )}
+
+      {/* Date Plan */}
+      {showDatePlan && userId && (
+        <div style={{ flexShrink: 0, maxHeight: '45vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
+          <DatePlan matchId={matchId} userId={userId} inline />
+        </div>
+      )}
+
+      {/* Spotify Song Share */}
+      {showSpotify && userId && (
+        <div style={{ flexShrink: 0, maxHeight: '45vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
+          <SpotifySongShare matchId={matchId} userId={userId} />
         </div>
       )}
 
