@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { getSupabase } from '@/lib/supabaseClient'
 
 interface PhotoUploadProps {
@@ -21,50 +20,59 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
   const inputRef = useRef<HTMLInputElement>(null)
   const slotRef = useRef<number>(0)
 
+  useEffect(() => { setPhotos(existingPhotos) }, [existingPhotos.join(',')])
+
+  const getClient = useCallback(() => {
+    const c = getSupabase()
+    if (!c) throw new Error('No Supabase client')
+    return c
+  }, [])
+
   const upload = useCallback(async (file: File, slot: number) => {
-    const client = getSupabase()
-    if (!client) { setErrors(e => ({ ...e, [slot]: 'No Supabase client' })); return }
-    await client.auth.refreshSession()
-    const { data: { session } } = await client.auth.getSession()
-    if (!session?.user?.id) { setErrors(e => ({ ...e, [slot]: 'Not signed in — please refresh and try again' })); return }
-    const uid = session.user.id
-    console.log('PHOTO UPLOAD uid from session:', uid, 'prop userId:', userId)
     if (!ALLOWED.includes(file.type)) { setErrors(e => ({ ...e, [slot]: 'JPG, PNG or WebP only' })); return }
     if (file.size > MAX_SIZE) { setErrors(e => ({ ...e, [slot]: 'Max 5MB' })); return }
     setUploading(slot); setErrors(e => { const n = { ...e }; delete n[slot]; return n })
     try {
+      const client = getClient()
+      await client.auth.refreshSession()
+      const { data: { session } } = await client.auth.getSession()
+      if (!session?.user?.id) throw new Error('Not signed in — please refresh')
+      const uid = session.user.id
       const ext = file.name.split('.').pop() ?? 'jpg'
       const path = `${uid}/${Date.now()}_${slot}.${ext}`
       if (photos[slot]) {
         const old = photos[slot].split('/profile-photos/')[1]
-        if (old) await supabase.storage.from('profile-photos').remove([old])
+        if (old) await client.storage.from('profile-photos').remove([old])
       }
-      const { error: upErr } = await supabase.storage.from('profile-photos').upload(path, file, { upsert: true })
+      const { error: upErr } = await client.storage.from('profile-photos').upload(path, file, { upsert: true })
       if (upErr) throw upErr
-      const { data: { publicUrl } } = supabase.storage.from('profile-photos').getPublicUrl(path)
+      const { data: { publicUrl } } = client.storage.from('profile-photos').getPublicUrl(path)
       const next = [...photos]; next[slot] = publicUrl
       const clean = next.filter(Boolean)
-      const { error: dbErr } = await supabase.from('user_fingerprint').upsert({ id: uid, photos: clean }, { onConflict: 'id' })
+      const { error: dbErr } = await client.from('user_fingerprint').upsert({ id: uid, photos: clean }, { onConflict: 'id' })
       if (dbErr) throw dbErr
       setPhotos(next); onPhotosChange?.(clean)
     } catch (err) {
-      console.error('PHOTO UPLOAD ERROR:', err)
       const msg = err instanceof Error ? err.message : JSON.stringify(err)
+      console.error('PHOTO UPLOAD ERROR:', msg)
       setErrors(e => ({ ...e, [slot]: msg || 'Upload failed' }))
     } finally { setUploading(null) }
-  }, [photos, userId, onPhotosChange])
+  }, [photos, getClient, onPhotosChange])
 
   const remove = useCallback(async (slot: number) => {
     const url = photos[slot]; if (!url) return
     try {
+      const client = getClient()
+      const { data: { session } } = await client.auth.getSession()
+      const uid = session?.user?.id
       const old = url.split('/profile-photos/')[1]
-      if (old) await supabase.storage.from('profile-photos').remove([old])
+      if (old) await client.storage.from('profile-photos').remove([old])
       const next = [...photos]; next[slot] = ''
       const clean = next.filter(Boolean)
-      await supabase.from('user_fingerprint').upsert({ id: userId, photos: clean }, { onConflict: 'id' })
+      if (uid) await client.from('user_fingerprint').upsert({ id: uid, photos: clean }, { onConflict: 'id' })
       setPhotos(next); onPhotosChange?.(clean)
-      } catch (err) { console.error('remove photo error', err) }
-  }, [photos, userId, onPhotosChange])
+    } catch (err) { console.error('remove photo error', err) }
+  }, [photos, getClient, onPhotosChange])
 
   return (
     <div style={{ width: '100%' }}>
@@ -74,42 +82,40 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
         {Array.from({ length: MAX_PHOTOS }).map((_, i) => {
           const url = photos[i]; const busy = uploading === i; const err = errors[i]
           return (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div onClick={() => { if (!busy) { slotRef.current = i; inputRef.current?.click() } }}
-                style={{ position: 'relative', aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden',
-                  border: url ? '2px solid rgba(124,58,237,0.4)' : i === 0 ? '2px dashed #7c3aed' : '2px dashed rgba(124,58,237,0.25)',
-                  background: 'rgba(124,58,237,0.04)', cursor: busy ? 'wait' : 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {url && !busy ? <>
-                  <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div key={i} style={{ position:'relative', aspectRatio:'1', borderRadius:12, overflow:'hidden',
+              border:`1.5px solid ${err ? '#f87171' : url ? 'rgba(124,58,237,0.4)' : 'rgba(124,58,237,0.2)'}`,
+              background: url ? 'transparent' : 'rgba(124,58,237,0.05)', cursor: busy ? 'wait' : 'pointer',
+              display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center' }}
+              onClick={() => { if (!busy && !url) { slotRef.current = i; inputRef.current?.click() } }}>
+              {url ? (
+                <>
+                  <img src={url} alt={`Photo ${i+1}`} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                   <button onClick={e => { e.stopPropagation(); remove(i) }}
-                    style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: '50%',
-                      background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 14, cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-                  {i === 0 && <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)',
-                    background: 'rgba(124,58,237,0.85)', color: '#fff', fontSize: 10, fontWeight: 700,
-                    padding: '2px 8px', borderRadius: 20 }}>Main</div>}
-                </> : busy ? <div style={{ textAlign: 'center' }}>
-                  <div style={{ width: 28, height: 28, border: '2px solid rgba(124,58,237,0.2)',
-                    borderTop: '2px solid #7c3aed', borderRadius: '50%', margin: '0 auto 6px',
-                    animation: 'bm-spin 0.8s linear infinite' }} />
-                  <span style={{ fontSize: 11, color: '#c4b5fd' }}>Uploading…</span>
-                </div> : <div style={{ textAlign: 'center', padding: 8 }}>
-                  <div style={{ fontSize: 24, marginBottom: 4, opacity: i === 0 ? 1 : 0.4 }}>{i === 0 ? '📷' : '+'}</div>
-                  <span style={{ fontSize: 11, color: i === 0 ? '#c4b5fd' : 'rgba(196,181,253,0.4)' }}>
-                    {i === 0 ? 'Add photo' : 'Add'}
-                  </span>
-                </div>}
-              </div>
-              {err && <p style={{ margin: 0, fontSize: 10, color: '#f87171', textAlign: 'center' }}>{err}</p>}
+                    style={{ position:'absolute', top:6, right:6, width:24, height:24, borderRadius:'50%',
+                      background:'rgba(0,0,0,0.6)', border:'none', color:'#fff', fontSize:14,
+                      cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+                </>
+              ) : busy ? (
+                <div style={{ color:'#9d84d0', fontSize:12, fontFamily:'system-ui,sans-serif' }}>Uploading…</div>
+              ) : err ? (
+                <div style={{ padding:8, textAlign:'center' }}>
+                  <div style={{ fontSize:11, color:'#f87171', fontFamily:'system-ui,sans-serif', lineHeight:1.3 }}>{err}</div>
+                  <button onClick={e => { e.stopPropagation(); slotRef.current = i; inputRef.current?.click() }}
+                    style={{ marginTop:6, fontSize:11, color:'#a78bfa', background:'transparent', border:'none', cursor:'pointer' }}>Retry</button>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontSize:24, marginBottom:6 }}>📷</div>
+                  <div style={{ fontSize:12, color:'#9d84d0', fontFamily:'system-ui,sans-serif' }}>Add photo</div>
+                </>
+              )}
             </div>
           )
         })}
       </div>
-      <p style={{ margin: '10px 0 0', fontSize: 11, color: 'rgba(196,181,253,0.45)', textAlign: 'center' }}>
+      <p style={{ margin:'12px 0 0', fontSize:11, color:'#6d4fa0', fontFamily:'system-ui,sans-serif', textAlign:'center' }}>
         Up to 3 photos · JPG, PNG, WebP · Max 5MB each
       </p>
-      <style>{'@keyframes bm-spin{to{transform:rotate(360deg)}}'}</style>
     </div>
   )
 }
