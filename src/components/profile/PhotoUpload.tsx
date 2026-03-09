@@ -22,57 +22,56 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
 
   useEffect(() => { setPhotos(existingPhotos) }, [existingPhotos.join(',')])
 
-  const getClient = useCallback(() => {
-    const c = getSupabase()
-    if (!c) throw new Error('No Supabase client')
-    return c
-  }, [])
-
   const upload = useCallback(async (file: File, slot: number) => {
     if (!ALLOWED.includes(file.type)) { setErrors(e => ({ ...e, [slot]: 'JPG, PNG or WebP only' })); return }
     if (file.size > MAX_SIZE) { setErrors(e => ({ ...e, [slot]: 'Max 5MB' })); return }
     setUploading(slot); setErrors(e => { const n = { ...e }; delete n[slot]; return n })
     try {
-      const client = getClient()
-      await client.auth.refreshSession()
-      const { data: { session } } = await client.auth.getSession()
-      if (!session?.user?.id) throw new Error('Not signed in — please refresh')
-      const uid = session.user.id
-      const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `${uid}/${Date.now()}_${slot}.${ext}`
-      if (photos[slot]) {
-        const old = photos[slot].split('/profile-photos/')[1]
-        if (old) await client.storage.from('profile-photos').remove([old])
-      }
-      const { error: upErr } = await client.storage.from('profile-photos').upload(path, file, { upsert: true })
-      if (upErr) throw upErr
-      const { data: { publicUrl } } = client.storage.from('profile-photos').getPublicUrl(path)
+      const uid = userId
+      if (!uid) throw new Error('Not signed in')
+
+      // Use server API route to bypass client-side RLS
+      const form = new FormData()
+      form.append('file', file)
+      form.append('userId', uid)
+      form.append('slot', String(slot))
+
+      const res = await fetch('/api/upload-photo', { method: 'POST', body: form })
+      const json = await res.json()
+      if (!res.ok || json.error) throw new Error(json.error || 'Upload failed')
+
+      const publicUrl = json.publicUrl
       const next = [...photos]; next[slot] = publicUrl
       const clean = next.filter(Boolean)
-      const { error: dbErr } = await client.from('user_fingerprint').upsert({ id: uid, photos: clean }, { onConflict: 'id' })
-      if (dbErr) throw dbErr
+
+      // Save to DB via client (has session for this)
+      const client = getSupabase()
+      if (client) {
+        const { error: dbErr } = await client.from('user_fingerprint')
+          .upsert({ id: uid, photos: clean }, { onConflict: 'id' })
+        if (dbErr) console.error('DB save error:', dbErr.message)
+      }
+
       setPhotos(next); onPhotosChange?.(clean)
     } catch (err) {
       const msg = err instanceof Error ? err.message : JSON.stringify(err)
       console.error('PHOTO UPLOAD ERROR:', msg)
       setErrors(e => ({ ...e, [slot]: msg || 'Upload failed' }))
     } finally { setUploading(null) }
-  }, [photos, getClient, onPhotosChange])
+  }, [photos, userId, onPhotosChange])
 
   const remove = useCallback(async (slot: number) => {
     const url = photos[slot]; if (!url) return
     try {
-      const client = getClient()
-      const { data: { session } } = await client.auth.getSession()
-      const uid = session?.user?.id
-      const old = url.split('/profile-photos/')[1]
-      if (old) await client.storage.from('profile-photos').remove([old])
+      const client = getSupabase()
       const next = [...photos]; next[slot] = ''
       const clean = next.filter(Boolean)
-      if (uid) await client.from('user_fingerprint').upsert({ id: uid, photos: clean }, { onConflict: 'id' })
+      if (client && userId) {
+        await client.from('user_fingerprint').upsert({ id: userId, photos: clean }, { onConflict: 'id' })
+      }
       setPhotos(next); onPhotosChange?.(clean)
     } catch (err) { console.error('remove photo error', err) }
-  }, [photos, getClient, onPhotosChange])
+  }, [photos, userId, onPhotosChange])
 
   return (
     <div style={{ width: '100%' }}>
