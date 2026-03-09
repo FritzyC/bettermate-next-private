@@ -24,17 +24,17 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
   const upload = useCallback(async (file: File, slot: number) => {
     const client = getSupabase()
     if (!client) { setErrors(e => ({ ...e, [slot]: 'No Supabase client' })); return }
-    const { data: { session } } = await client.auth.getSession()
-    console.log('PHOTO UPLOAD userId:', userId, 'session uid:', session?.user?.id)
-    if (!session) { setErrors(e => ({ ...e, [slot]: 'Not signed in — please refresh and try again' })); return }
-    // Refresh session to ensure token is fresh
     await client.auth.refreshSession()
+    const { data: { session } } = await client.auth.getSession()
+    if (!session?.user?.id) { setErrors(e => ({ ...e, [slot]: 'Not signed in — please refresh and try again' })); return }
+    const uid = session.user.id
+    console.log('PHOTO UPLOAD uid from session:', uid, 'prop userId:', userId)
     if (!ALLOWED.includes(file.type)) { setErrors(e => ({ ...e, [slot]: 'JPG, PNG or WebP only' })); return }
     if (file.size > MAX_SIZE) { setErrors(e => ({ ...e, [slot]: 'Max 5MB' })); return }
     setUploading(slot); setErrors(e => { const n = { ...e }; delete n[slot]; return n })
     try {
       const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `${userId}/${Date.now()}_${slot}.${ext}`
+      const path = `${uid}/${Date.now()}_${slot}.${ext}`
       if (photos[slot]) {
         const old = photos[slot].split('/profile-photos/')[1]
         if (old) await supabase.storage.from('profile-photos').remove([old])
@@ -44,7 +44,7 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
       const { data: { publicUrl } } = supabase.storage.from('profile-photos').getPublicUrl(path)
       const next = [...photos]; next[slot] = publicUrl
       const clean = next.filter(Boolean)
-      const { error: dbErr } = await supabase.from('user_fingerprint').upsert({ id: userId, photos: clean }, { onConflict: 'id' })
+      const { error: dbErr } = await supabase.from('user_fingerprint').upsert({ id: uid, photos: clean }, { onConflict: 'id' })
       if (dbErr) throw dbErr
       setPhotos(next); onPhotosChange?.(clean)
     } catch (err) {
