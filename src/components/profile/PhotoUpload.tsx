@@ -21,7 +21,10 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
   const slotRef = useRef<number>(0)
 
   const upload = useCallback(async (file: File, slot: number) => {
-    console.log('PHOTO UPLOAD userId:', userId, 'file:', file.name)
+    // Verify session exists before upload
+    const { data: { session } } = await supabase.auth.getSession()
+    console.log('PHOTO UPLOAD userId:', userId, 'session uid:', session?.user?.id, 'file:', file.name)
+    if (!session) { setErrors(e => ({ ...e, [slot]: 'Not signed in — please refresh' })); return }
     if (!ALLOWED.includes(file.type)) { setErrors(e => ({ ...e, [slot]: 'JPG, PNG or WebP only' })); return }
     if (file.size > MAX_SIZE) { setErrors(e => ({ ...e, [slot]: 'Max 5MB' })); return }
     setUploading(slot); setErrors(e => { const n = { ...e }; delete n[slot]; return n })
