@@ -8,13 +8,13 @@ import { useRouter } from 'next/navigation';
 type Step = 'welcome' | 'compact' | 'fingerprint' | 'values' | 'preferences' | 'completion' | 'entry';
 type Fingerprint = { music: string[]; hobbies: string[] };
 type Values = { life_trajectory: string; conflict_style: string; finance_alignment: string; growth_orientation: string; relationship_readiness: string };
-type PrefField = { value: string; dealbreaker: boolean };
+type PrefField = { values: string[]; dealbreaker: boolean };
 type Preferences = {
   political: PrefField; religion: PrefField; diet: PrefField;
   drinking: PrefField; smoking: PrefField; kids: PrefField;
   ethnicity: PrefField; education: PrefField; fitness: PrefField;
 };
-const defaultPref = (): PrefField => ({ value: '', dealbreaker: false });
+const defaultPref = (): PrefField => ({ values: [], dealbreaker: false });
 const defaultPrefs = (): Preferences => ({
   political: defaultPref(), religion: defaultPref(), diet: defaultPref(),
   drinking: defaultPref(), smoking: defaultPref(), kids: defaultPref(),
@@ -202,33 +202,40 @@ const PREF_FIELDS: { key: keyof Preferences; label: string; icon: string; option
 ];
 
 function PreferencesQ({ prefs, setPrefs, onNext }: { prefs:Preferences; setPrefs:(p:Preferences)=>void; onNext:()=>void }) {
-  const set = (key: keyof Preferences, field: 'value'|'dealbreaker', val: string|boolean) => {
-    setPrefs({ ...prefs, [key]: { ...prefs[key], [field]: val } });
+  const toggle = (key: keyof Preferences, opt: string) => {
+    const cur = prefs[key].values;
+    const next = cur.includes(opt) ? cur.filter((v:string) => v !== opt) : [...cur, opt];
+    setPrefs({ ...prefs, [key]: { ...prefs[key], values: next } });
+  };
+  const toggleDB = (key: keyof Preferences) => {
+    setPrefs({ ...prefs, [key]: { ...prefs[key], dealbreaker: !prefs[key].dealbreaker } });
   };
   return (
     <Shell>
       <p style={S.eyebrow}>Your Preferences</p>
       <h1 style={S.h1}>What matters to you in a match?</h1>
-      <p style={S.body}>Be honest — this is how BetterMate protects your time. Toggle dealbreaker if a mismatch is a non-starter.</p>
-      <div style={{ display:'flex', flexDirection:'column', gap:16, marginBottom:28 }}>
+      <p style={S.body}>Select all that apply. Mark dealbreaker if a mismatch is a non-starter for you.</p>
+      <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:28 }}>
         {PREF_FIELDS.map(({ key, label, icon, options }) => (
-          <div key={key} style={{ background:'rgba(124,58,237,0.05)', border:'1px solid rgba(124,58,237,0.12)', borderRadius:14, padding:'16px 18px' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-              <span style={{ fontFamily:"Georgia,serif", fontSize:15, color:'#e9d5ff' }}>{icon} {label}</span>
-              <button
-                onClick={() => set(key, 'dealbreaker', !prefs[key].dealbreaker)}
-                style={{ padding:'4px 12px', borderRadius:50, border:prefs[key].dealbreaker ? '1.5px solid #f87171' : '1.5px solid rgba(124,58,237,0.3)', background: prefs[key].dealbreaker ? 'rgba(248,113,113,0.12)' : 'transparent', color: prefs[key].dealbreaker ? '#f87171' : '#6d4fa0', fontSize:11, fontFamily:'system-ui,sans-serif', cursor:'pointer', transition:'all 0.15s ease', fontWeight:600 }}>
+          <div key={key} style={{ background:'rgba(124,58,237,0.05)', border:'1px solid rgba(124,58,237,0.12)', borderRadius:14, padding:'14px 16px' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
+              <span style={{ fontFamily:"Georgia,serif", fontSize:14, color:'#e9d5ff' }}>{icon} {label}</span>
+              <button onClick={() => toggleDB(key)}
+                style={{ padding:'3px 10px', borderRadius:50, border: prefs[key].dealbreaker ? '1.5px solid #f87171' : '1.5px solid #6d4fa0', background: prefs[key].dealbreaker ? 'rgba(248,113,113,0.12)' : 'transparent', color: prefs[key].dealbreaker ? '#f87171' : '#9d84d0', fontSize:10, fontFamily:'system-ui,sans-serif', cursor:'pointer', fontWeight:600, whiteSpace:'nowrap' }}>
                 {prefs[key].dealbreaker ? '🚫 Dealbreaker' : 'Dealbreaker?'}
               </button>
             </div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-              {options.map(opt => (
-                <button key={opt}
-                  onClick={() => set(key, 'value', prefs[key].value === opt ? '' : opt)}
-                  style={{ padding:'8px 14px', borderRadius:50, border: prefs[key].value === opt ? '1.5px solid #7c3aed' : '1.5px solid #2a1645', background: prefs[key].value === opt ? 'rgba(124,58,237,0.15)' : 'transparent', color: prefs[key].value === opt ? '#c4b5fd' : '#9d84d0', fontSize:12, fontFamily:'system-ui,sans-serif', cursor:'pointer', transition:'all 0.15s ease' }}>
-                  {opt}
-                </button>
-              ))}
+            <p style={{ margin:'0 0 8px', fontSize:11, color:'#6d4fa0', fontFamily:'system-ui,sans-serif' }}>Select all that apply</p>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+              {options.map(opt => {
+                const active = prefs[key].values.includes(opt);
+                return (
+                  <button key={opt} onClick={() => toggle(key, opt)}
+                    style={{ padding:'7px 12px', borderRadius:50, border: active ? '1.5px solid #7c3aed' : '1.5px solid #2a1645', background: active ? 'rgba(124,58,237,0.18)' : 'transparent', color: active ? '#c4b5fd' : '#9d84d0', fontSize:12, fontFamily:'system-ui,sans-serif', cursor:'pointer', transition:'all 0.15s ease', fontWeight: active ? 600 : 400 }}>
+                    {active ? '✓ ' : ''}{opt}
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -341,15 +348,15 @@ export default function OnboardingFlow() {
       await supabase.from('show_up_streaks').upsert({ id:user.id, current_streak:0, longest_streak:0, freeze_used:false, freeze_available:true },{ onConflict:'id', ignoreDuplicates:true });
       await supabase.from('user_match_preferences').upsert({
         id: user.id,
-        political_view: prefs.political.value, political_dealbreaker: prefs.political.dealbreaker,
-        religion: prefs.religion.value, religion_dealbreaker: prefs.religion.dealbreaker,
-        diet: prefs.diet.value, diet_dealbreaker: prefs.diet.dealbreaker,
-        drinking: prefs.drinking.value, drinking_dealbreaker: prefs.drinking.dealbreaker,
-        smoking: prefs.smoking.value, smoking_dealbreaker: prefs.smoking.dealbreaker,
-        kids_preference: prefs.kids.value, kids_dealbreaker: prefs.kids.dealbreaker,
-        ethnicity_preference: prefs.ethnicity.value, ethnicity_dealbreaker: prefs.ethnicity.dealbreaker,
-        education_preference: prefs.education.value, education_dealbreaker: prefs.education.dealbreaker,
-        fitness_lifestyle: prefs.fitness.value, fitness_dealbreaker: prefs.fitness.dealbreaker,
+        political_view: prefs.political.values, political_dealbreaker: prefs.political.dealbreaker,
+        religion: prefs.religion.values, religion_dealbreaker: prefs.religion.dealbreaker,
+        diet: prefs.diet.values, diet_dealbreaker: prefs.diet.dealbreaker,
+        drinking: prefs.drinking.values, drinking_dealbreaker: prefs.drinking.dealbreaker,
+        smoking: prefs.smoking.values, smoking_dealbreaker: prefs.smoking.dealbreaker,
+        kids_preference: prefs.kids.values, kids_dealbreaker: prefs.kids.dealbreaker,
+        ethnicity_preference: prefs.ethnicity.values, ethnicity_dealbreaker: prefs.ethnicity.dealbreaker,
+        education_preference: prefs.education.values, education_dealbreaker: prefs.education.dealbreaker,
+        fitness_lifestyle: prefs.fitness.values, fitness_dealbreaker: prefs.fitness.dealbreaker,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
       router.replace('/matches');
