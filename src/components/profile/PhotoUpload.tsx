@@ -42,7 +42,8 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
       setPhotos(next); onPhotosChange?.(clean)
     } catch (err) {
       console.error('PHOTO UPLOAD ERROR:', err)
-      setErrors(e => ({ ...e, [slot]: 'Upload failed — try again' }))
+      const msg = err instanceof Error ? err.message : JSON.stringify(err)
+      setErrors(e => ({ ...e, [slot]: msg || 'Upload failed' }))
     } finally { setUploading(null) }
   }, [photos, userId, onPhotosChange])
 
