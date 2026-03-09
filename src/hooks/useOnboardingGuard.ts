@@ -13,9 +13,10 @@ export function useOnboardingGuard() {
       const { data: fp } = await supabase
         .from('user_fingerprint')
         .select('onboarding_complete')
-        .eq('user_id', session.user.id)
+        .eq('id', session.user.id)
         .maybeSingle();
-      if (!fp?.onboarding_complete) {
+      // Only redirect if row exists AND onboarding_complete is explicitly false
+      if (fp !== null && fp.onboarding_complete === false) {
         router.replace('/onboarding');
       }
     })();
