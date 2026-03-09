@@ -195,8 +195,8 @@ const PREF_FIELDS: { key: keyof Preferences; label: string; icon: string; option
   { key:'diet', label:'Diet', icon:'🥗', options:['No preference','Omnivore','Vegetarian','Vegan','Halal','Kosher','Gluten-free'] },
   { key:'drinking', label:'Drinking', icon:'🥂', options:['No preference','Never','Socially','Regularly'] },
   { key:'smoking', label:'Smoking', icon:'🚭', options:['No preference','Never','Occasionally','Regularly'] },
-  { key:'kids', label:'Kids', icon:'👶', options:['Open to all','Want kids','Do not want kids','Have kids','Maybe someday'] },
-  { key:'ethnicity', label:'Ethnicity preference', icon:'🌍', options:['Open to all','Same ethnicity preferred','No preference'] },
+  { key:'kids', label:'Kids preference', icon:'👶', options:['Open to all','Want kids','Do not want kids','Have kids / open to more','Do not have kids','Maybe someday','No preference'] },
+  { key:'ethnicity', label:'Preferred ethnicity/race', icon:'🌍', options:['Open to all','White / Caucasian','Black / African','Hispanic / Latino','Asian','Middle Eastern','South Asian','Native American','Pacific Islander','Mixed','No preference'] },
   { key:'education', label:'Education', icon:'🎓', options:['No preference','High school','Some college','Bachelors degree','Graduate degree','Trade / vocational'] },
   { key:'fitness', label:'Fitness lifestyle', icon:'💪', options:['No preference','Very active','Moderately active','Occasionally active','Not a priority'] },
 ];
@@ -352,7 +352,7 @@ export default function OnboardingFlow() {
         fitness_lifestyle: prefs.fitness.value, fitness_dealbreaker: prefs.fitness.dealbreaker,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
-      setStep('entry');
+      router.replace('/matches');
     } catch(e:unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally { setLoading(false); }
