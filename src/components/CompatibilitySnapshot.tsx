@@ -46,8 +46,8 @@ export default function CompatibilitySnapshot({ matchId, otherUserId }: { matchI
       }
       if (!otherId) return;
       const [mine, theirs, myPrefs, theirPrefs] = await Promise.all([
-        supabase.from('user_values').select('*').eq('id',user.id).maybeSingle(),
-        supabase.from('user_values').select('*').eq('id',otherId).maybeSingle(),
+        supabase.from('user_values').select('*').eq('user_id',user.id).maybeSingle(),
+        supabase.from('user_values').select('*').eq('user_id',otherId).maybeSingle(),
         supabase.from('user_preferences').select('*').eq('id',user.id).maybeSingle(),
         supabase.from('user_preferences').select('*').eq('id',otherId).maybeSingle(),
       ]);
