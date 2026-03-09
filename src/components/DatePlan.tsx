@@ -123,19 +123,14 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
     const prompt = buildFairnessPrompt(locationInput, locationInput, travelMode, fingerprintA, fingerprintB, preferredTags);
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/venue-suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1500,
-          messages: [{ role: 'user', content: prompt }],
-        }),
+        body: JSON.stringify({ locationA: locationInput, locationB: locationInput, travelMode, tags: preferredTags }),
       });
       const data = await res.json();
-      const text = data.content?.[0]?.text ?? '';
-      const clean = text.replace(/```json|```/g, '').trim();
-      const venues = JSON.parse(clean);
+      const venues = data.venues ?? [];
+      if (venues.length === 0) throw new Error('No venues returned');
 
       const supabase2 = getSupabase();
       if (!supabase2) return;
