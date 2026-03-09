@@ -316,6 +316,7 @@ export default function OnboardingFlow() {
   // supabase already imported
   const router = useRouter();
   const [step, setStep] = useState<Step>('welcome');
+  const [checking, setChecking] = useState(true);
   const [fp, setFp] = useState<Fingerprint>({ music:[], hobbies:[] });
   const [values, setValues] = useState<Partial<Values>>({});
   const [prefs, setPrefs] = useState<Preferences>(defaultPrefs());
@@ -333,6 +334,7 @@ export default function OnboardingFlow() {
       // If already onboarded, skip to matches
       const { data: fp } = await supabase.from('user_fingerprint').select('onboarding_complete').eq('id', user.id).maybeSingle();
       if (fp?.onboarding_complete === true) { router.replace('/matches'); return; }
+      setChecking(false);
 
       const { count } = await supabase.from('matches').select('id',{count:'exact',head:true}).or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`).eq('status','active');
       setHasMatch((count??0)>0);
@@ -369,6 +371,7 @@ export default function OnboardingFlow() {
     } finally { setLoading(false); }
   };
 
+  if (checking) return <div style={{ minHeight:'100vh', background:'#06030f' }} />
   return (
     <>
       <ProgressBar step={step} />
