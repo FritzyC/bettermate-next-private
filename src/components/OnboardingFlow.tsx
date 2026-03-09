@@ -336,6 +336,7 @@ export default function OnboardingFlow() {
       if (fp?.onboarding_complete === true) { router.replace('/matches'); return; }
       setChecking(false);
 
+      setChecking(false);
       const { count } = await supabase.from('matches').select('id',{count:'exact',head:true}).or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`).eq('status','active');
       setHasMatch((count??0)>0);
     })();
