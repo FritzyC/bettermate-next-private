@@ -61,7 +61,8 @@ export default function MatchesClientShell() {
         {matches.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px 24px', background: '#111', borderRadius: 16, border: '1px solid #222' }}>
             <p style={{ fontSize: 18, color: '#888', marginBottom: 16 }}>No matches yet</p>
-            <a href="/invite/create" style={{ display: 'inline-block', padding: '12px 24px', background: '#6366f1', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
+            <a href="/profile" style={{ display: 'inline-block', padding: '12px 24px', background: 'rgba(124,58,237,0.15)', color: '#c4b5fd', borderRadius: 8, textDecoration: 'none', fontWeight: 600, border: '1px solid rgba(124,58,237,0.3)' }}>Edit Profile</a>
+              <a href="/invite/create" style={{ display: 'inline-block', padding: '12px 24px', background: '#6366f1', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>
               Create an Invite
             </a>
           </div>

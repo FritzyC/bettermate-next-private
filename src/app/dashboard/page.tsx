@@ -35,6 +35,7 @@ export default function DashboardPage() {
         <p style={{ color: '#888' }}>{user?.email}</p>
         <div style={{ marginTop: 32, display: 'flex', gap: 16 }}>
           <a href="/matches" style={{ padding: '12px 24px', background: '#6366f1', color: '#fff', borderRadius: 8, textDecoration: 'none', fontWeight: 600 }}>View Matches</a>
+          <a href="/profile" style={{ padding: '12px 24px', background: 'rgba(124,58,237,0.15)', color: '#c4b5fd', borderRadius: 8, textDecoration: 'none', border: '1px solid rgba(124,58,237,0.3)' }}>Edit Profile</a>
           <a href="/invite/create" style={{ padding: '12px 24px', background: '#1a1a1a', color: '#fff', borderRadius: 8, textDecoration: 'none', border: '1px solid #333' }}>Create Invite</a>
         </div>
       </div>
