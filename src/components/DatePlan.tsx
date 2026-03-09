@@ -145,7 +145,7 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
         body: '📍 BetterMate suggested 3 venues for your date. Open the Date Plan to vote.',
       });
       await trackEvent('plan_venues_presented', { count: venues.length, mode: 'fairness_2', sources: ['a_area','b_area','midpoint'] }, matchId);
-    } catch (_) {}
+    } catch (err) { console.error('VENUE ERROR:', err); }
     setGeneratingVenues(false);
     setShowLocationInput(false);
   }
