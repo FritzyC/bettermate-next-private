@@ -11,18 +11,32 @@ export default function MatchesClientShell() {
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [otherUsers, setOtherUsers] = useState<Record<string, { photos: string[]; name: string }>>({});
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/auth?next=/matches'); return; }
       setUserEmail(user.email ?? null);
+      setUserId(user.id);
       const { data, error } = await supabase
         .from('matches')
         .select('*')
         .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
-      if (!error && data) setMatches(data);
+      if (!error && data) {
+        setMatches(data);
+        // Fetch other user fingerprints for photos
+        const otherIds = data.map((m: any) => m.user_a_id === user.id ? m.user_b_id : m.user_a_id);
+        if (otherIds.length > 0) {
+          const { data: fps } = await supabase.from('user_fingerprint').select('id, photos').in('id', otherIds);
+          const { data: authData } = await supabase.from('user_fingerprint').select('id').in('id', otherIds);
+          const map: Record<string, { photos: string[]; name: string }> = {};
+          (fps ?? []).forEach((fp: any) => { map[fp.id] = { photos: fp.photos ?? [], name: '' }; });
+          setOtherUsers(map);
+        }
+      }
       setLoading(false);
     })();
   }, [router]);
@@ -60,10 +74,22 @@ export default function MatchesClientShell() {
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             {matches.map((match) => (
-              <a key={match.id} href={'/matches/' + match.id} style={{ display:'block', padding:20, background:'rgba(124,58,237,0.06)', borderRadius:16, border:'1px solid rgba(124,58,237,0.12)', textDecoration:'none', color:'#fff' }}>
-                <div style={{ fontSize:12, color:'#4a3a6a', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.1em' }}>Match</div>
-                <div style={{ fontWeight:600, color:'#e8d8f8' }}>{'#' + String(match.id).slice(0,8)}</div>
-                <div style={{ fontSize:12, color:'#3a2a55', marginTop:8 }}>{new Date(match.created_at).toLocaleDateString()}</div>
+              <a key={match.id} href={'/matches/' + match.id} style={{ display:'flex', alignItems:'center', gap:16, padding:20, background:'rgba(124,58,237,0.06)', borderRadius:16, border:'1px solid rgba(124,58,237,0.12)', textDecoration:'none', color:'#fff' }}>
+                {(() => {
+                  const otherId = match.user_a_id === userId ? match.user_b_id : match.user_a_id;
+                  const ou = otherUsers[otherId];
+                  const photo = ou?.photos?.[0];
+                  return photo ? (
+                    <img src={photo} alt="match" style={{ width:56, height:56, borderRadius:'50%', objectFit:'cover', flexShrink:0, border:'2px solid rgba(124,58,237,0.3)' }} />
+                  ) : (
+                    <div style={{ width:56, height:56, borderRadius:'50%', background:'rgba(124,58,237,0.15)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22 }}>✦</div>
+                  );
+                })()}
+                <div>
+                  <div style={{ fontSize:12, color:'#4a3a6a', marginBottom:2, textTransform:'uppercase', letterSpacing:'0.1em' }}>Match</div>
+                  <div style={{ fontWeight:600, color:'#e8d8f8' }}>{'#' + String(match.id).slice(0,8)}</div>
+                  <div style={{ fontSize:12, color:'#3a2a55', marginTop:4 }}>{new Date(match.created_at).toLocaleDateString()}</div>
+                </div>
               </a>
             ))}
           </div>
