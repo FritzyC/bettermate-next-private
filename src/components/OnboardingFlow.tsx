@@ -340,7 +340,9 @@ export default function OnboardingFlow() {
     try {
       const { data:{ user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+      console.log('SAVE: user.id=', user.id);
       const { error:e1 } = await supabase.from('user_fingerprint').upsert({ id:user.id, music_genres:fp.music, hobbies:fp.hobbies, onboarding_complete:true, updated_at:new Date().toISOString() },{ onConflict:'id' });
+      console.log('FINGERPRINT UPSERT error:', e1);
       if (e1) throw e1;
       const { error:e2 } = await supabase.from('user_values').upsert({ user_id:user.id, ...(values as Values), updated_at:new Date().toISOString() },{ onConflict:'user_id' });
       if (e2) throw e2;
