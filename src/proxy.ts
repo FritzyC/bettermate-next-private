@@ -66,9 +66,12 @@ export async function proxy(request: NextRequest) {
       .eq("id", user.id)
       .maybeSingle()
 
+    // Only redirect if we got a row back AND it's explicitly false
+    // If no row exists yet, let them through (they may be mid-onboarding)
     const onboardingComplete = fingerprint?.onboarding_complete === true
+    const hasRow = fingerprint !== null
 
-    if (!onboardingComplete) {
+    if (hasRow && !onboardingComplete) {
       return NextResponse.redirect(new URL("/onboarding", request.url))
     }
   }
