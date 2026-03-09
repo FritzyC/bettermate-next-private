@@ -1,3 +1,45 @@
+
+export type UserPreferences = {
+  political_view?: string; political_dealbreaker?: boolean;
+  religion?: string; religion_dealbreaker?: boolean;
+  diet?: string; diet_dealbreaker?: boolean;
+  drinking?: string; drinking_dealbreaker?: boolean;
+  smoking?: string; smoking_dealbreaker?: boolean;
+  kids_preference?: string; kids_dealbreaker?: boolean;
+  ethnicity_preference?: string; ethnicity_dealbreaker?: boolean;
+  education_preference?: string; education_dealbreaker?: boolean;
+  fitness_lifestyle?: string; fitness_dealbreaker?: boolean;
+};
+
+export type DealBreakerResult = { blocked: boolean; reasons: string[] };
+
+export function checkDealbreakers(a: UserPreferences, b: UserPreferences): DealBreakerResult {
+  const reasons: string[] = [];
+  const check = (
+    aVal: string|undefined, bVal: string|undefined,
+    aDB: boolean|undefined, bDB: boolean|undefined,
+    label: string
+  ) => {
+    if (!aVal || !bVal) return;
+    if (aVal === 'No preference' || bVal === 'No preference') return;
+    if (aVal === 'Open to all' || bVal === 'Open to all') return;
+    if (aVal !== bVal) {
+      if (aDB) reasons.push(`Your ${label} preference is a dealbreaker`);
+      if (bDB) reasons.push(`Their ${label} preference is a dealbreaker`);
+    }
+  };
+  check(a.political_view, b.political_view, a.political_dealbreaker, b.political_dealbreaker, 'political');
+  check(a.religion, b.religion, a.religion_dealbreaker, b.religion_dealbreaker, 'religion');
+  check(a.diet, b.diet, a.diet_dealbreaker, b.diet_dealbreaker, 'diet');
+  check(a.drinking, b.drinking, a.drinking_dealbreaker, b.drinking_dealbreaker, 'drinking');
+  check(a.smoking, b.smoking, a.smoking_dealbreaker, b.smoking_dealbreaker, 'smoking');
+  check(a.kids_preference, b.kids_preference, a.kids_dealbreaker, b.kids_dealbreaker, 'kids');
+  check(a.ethnicity_preference, b.ethnicity_preference, a.ethnicity_dealbreaker, b.ethnicity_dealbreaker, 'ethnicity');
+  check(a.education_preference, b.education_preference, a.education_dealbreaker, b.education_dealbreaker, 'education');
+  check(a.fitness_lifestyle, b.fitness_lifestyle, a.fitness_dealbreaker, b.fitness_dealbreaker, 'fitness');
+  return { blocked: reasons.length > 0, reasons };
+}
+
 export type UserValues = {
   life_trajectory: string;
   conflict_style: string;

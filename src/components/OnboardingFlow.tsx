@@ -5,9 +5,21 @@ import { supabase } from '@/lib/supabase/client'
 import PhotoUpload from '@/components/profile/PhotoUpload';
 import { useRouter } from 'next/navigation';
 
-type Step = 'welcome' | 'compact' | 'fingerprint' | 'values' | 'completion' | 'entry';
+type Step = 'welcome' | 'compact' | 'fingerprint' | 'values' | 'preferences' | 'completion' | 'entry';
 type Fingerprint = { music: string[]; hobbies: string[] };
 type Values = { life_trajectory: string; conflict_style: string; finance_alignment: string; growth_orientation: string; relationship_readiness: string };
+type PrefField = { value: string; dealbreaker: boolean };
+type Preferences = {
+  political: PrefField; religion: PrefField; diet: PrefField;
+  drinking: PrefField; smoking: PrefField; kids: PrefField;
+  ethnicity: PrefField; education: PrefField; fitness: PrefField;
+};
+const defaultPref = (): PrefField => ({ value: '', dealbreaker: false });
+const defaultPrefs = (): Preferences => ({
+  political: defaultPref(), religion: defaultPref(), diet: defaultPref(),
+  drinking: defaultPref(), smoking: defaultPref(), kids: defaultPref(),
+  ethnicity: defaultPref(), education: defaultPref(), fitness: defaultPref(),
+});
 
 const MUSIC = ['Hip-Hop','R&B','Pop','Alternative','Indie','Jazz','House','Afrobeats','Latin','Classical','Rock','Soul','Electronic','Country','Reggae'];
 const INTERESTS = ['Coffee walks','Fitness / gym','Live music','Art / museums','Food exploration','Hiking / outdoors','Comedy shows','Gaming','Dancing','Entrepreneurship','Study sessions','Sports events','Reading','Film / cinema','Cooking','Photography'];
@@ -19,7 +31,7 @@ const QUESTIONS = [
   { key: 'relationship_readiness' as const, prompt: "What are you genuinely open to right now?", options: ['Long-term relationship','Serious dating','Meeting people and seeing where it goes','Friendships and social connections'] },
 ];
 
-const STEPS: Step[] = ['welcome','compact','fingerprint','values','completion','entry'];
+const STEPS: Step[] = ['welcome','compact','fingerprint','values','preferences','completion','entry'];
 
 const S = {
   shell: { minHeight:'100vh', background:'linear-gradient(160deg,#06030f 0%,#0e0720 50%,#110828 100%)', display:'flex', flexDirection:'column' as const, alignItems:'center', justifyContent:'center', padding:'60px 24px 40px' } as React.CSSProperties,
@@ -176,6 +188,57 @@ function ValuesQ({ values, setValues, onNext }: { values:Partial<Values>; setVal
   );
 }
 
+
+const PREF_FIELDS: { key: keyof Preferences; label: string; icon: string; options: string[] }[] = [
+  { key:'political', label:'Political leaning', icon:'🗳️', options:['Conservative','Liberal','Moderate','Apolitical','Prefer not to say'] },
+  { key:'religion', label:'Religion', icon:'🕊️', options:['Christian','Muslim','Jewish','Hindu','Buddhist','Atheist','Agnostic','Spiritual','Other','Open to all'] },
+  { key:'diet', label:'Diet', icon:'🥗', options:['No preference','Omnivore','Vegetarian','Vegan','Halal','Kosher','Gluten-free'] },
+  { key:'drinking', label:'Drinking', icon:'🥂', options:['No preference','Never','Socially','Regularly'] },
+  { key:'smoking', label:'Smoking', icon:'🚭', options:['No preference','Never','Occasionally','Regularly'] },
+  { key:'kids', label:'Kids', icon:'👶', options:['Open to all','Want kids','Do not want kids','Have kids','Maybe someday'] },
+  { key:'ethnicity', label:'Ethnicity preference', icon:'🌍', options:['Open to all','Same ethnicity preferred','No preference'] },
+  { key:'education', label:'Education', icon:'🎓', options:['No preference','High school','Some college','Bachelors degree','Graduate degree','Trade / vocational'] },
+  { key:'fitness', label:'Fitness lifestyle', icon:'💪', options:['No preference','Very active','Moderately active','Occasionally active','Not a priority'] },
+];
+
+function PreferencesQ({ prefs, setPrefs, onNext }: { prefs:Preferences; setPrefs:(p:Preferences)=>void; onNext:()=>void }) {
+  const set = (key: keyof Preferences, field: 'value'|'dealbreaker', val: string|boolean) => {
+    setPrefs({ ...prefs, [key]: { ...prefs[key], [field]: val } });
+  };
+  return (
+    <Shell>
+      <p style={S.eyebrow}>Your Preferences</p>
+      <h1 style={S.h1}>What matters to you in a match?</h1>
+      <p style={S.body}>Be honest — this is how BetterMate protects your time. Toggle dealbreaker if a mismatch is a non-starter.</p>
+      <div style={{ display:'flex', flexDirection:'column', gap:16, marginBottom:28 }}>
+        {PREF_FIELDS.map(({ key, label, icon, options }) => (
+          <div key={key} style={{ background:'rgba(124,58,237,0.05)', border:'1px solid rgba(124,58,237,0.12)', borderRadius:14, padding:'16px 18px' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+              <span style={{ fontFamily:"Georgia,serif", fontSize:15, color:'#e9d5ff' }}>{icon} {label}</span>
+              <button
+                onClick={() => set(key, 'dealbreaker', !prefs[key].dealbreaker)}
+                style={{ padding:'4px 12px', borderRadius:50, border:prefs[key].dealbreaker ? '1.5px solid #f87171' : '1.5px solid rgba(124,58,237,0.3)', background: prefs[key].dealbreaker ? 'rgba(248,113,113,0.12)' : 'transparent', color: prefs[key].dealbreaker ? '#f87171' : '#6d4fa0', fontSize:11, fontFamily:'system-ui,sans-serif', cursor:'pointer', transition:'all 0.15s ease', fontWeight:600 }}>
+                {prefs[key].dealbreaker ? '🚫 Dealbreaker' : 'Dealbreaker?'}
+              </button>
+            </div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              {options.map(opt => (
+                <button key={opt}
+                  onClick={() => set(key, 'value', prefs[key].value === opt ? '' : opt)}
+                  style={{ padding:'8px 14px', borderRadius:50, border: prefs[key].value === opt ? '1.5px solid #7c3aed' : '1.5px solid #2a1645', background: prefs[key].value === opt ? 'rgba(124,58,237,0.15)' : 'transparent', color: prefs[key].value === opt ? '#c4b5fd' : '#9d84d0', fontSize:12, fontFamily:'system-ui,sans-serif', cursor:'pointer', transition:'all 0.15s ease' }}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <Btn onClick={onNext}>Continue →</Btn>
+      <button onClick={onNext} style={{ width:'100%', padding:'14px', background:'transparent', border:'none', color:'#3a2a55', fontSize:13, fontFamily:'system-ui,sans-serif', cursor:'pointer', marginTop:10 }}>Skip for now</button>
+    </Shell>
+  );
+}
+
 function Completion({ fp, values, onComplete, loading, photos, onPhotosChange, userId }: { fp:Fingerprint; values:Partial<Values>; onComplete:()=>void; loading:boolean; photos:string[]; onPhotosChange:(urls:string[])=>void; userId:string }) {
   const checks = [{ label:'Values', done: Object.keys(values).length>=5 },{ label:'Interests', done: fp.hobbies.length>=3 },{ label:'Music', done: fp.music.length>=1 }];
   const pct = Math.round((checks.filter(c=>c.done).length / (checks.length+2))*100);
@@ -248,6 +311,7 @@ export default function OnboardingFlow() {
   const [step, setStep] = useState<Step>('welcome');
   const [fp, setFp] = useState<Fingerprint>({ music:[], hobbies:[] });
   const [values, setValues] = useState<Partial<Values>>({});
+  const [prefs, setPrefs] = useState<Preferences>(defaultPrefs());
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -275,6 +339,19 @@ export default function OnboardingFlow() {
       if (e2) throw e2;
       await supabase.from('integrity_scores').upsert({ id:user.id, score:60, tier:3 },{ onConflict:'id', ignoreDuplicates:true });
       await supabase.from('show_up_streaks').upsert({ id:user.id, current_streak:0, longest_streak:0, freeze_used:false, freeze_available:true },{ onConflict:'id', ignoreDuplicates:true });
+      await supabase.from('user_preferences').upsert({
+        id: user.id,
+        political_view: prefs.political.value, political_dealbreaker: prefs.political.dealbreaker,
+        religion: prefs.religion.value, religion_dealbreaker: prefs.religion.dealbreaker,
+        diet: prefs.diet.value, diet_dealbreaker: prefs.diet.dealbreaker,
+        drinking: prefs.drinking.value, drinking_dealbreaker: prefs.drinking.dealbreaker,
+        smoking: prefs.smoking.value, smoking_dealbreaker: prefs.smoking.dealbreaker,
+        kids_preference: prefs.kids.value, kids_dealbreaker: prefs.kids.dealbreaker,
+        ethnicity_preference: prefs.ethnicity.value, ethnicity_dealbreaker: prefs.ethnicity.dealbreaker,
+        education_preference: prefs.education.value, education_dealbreaker: prefs.education.dealbreaker,
+        fitness_lifestyle: prefs.fitness.value, fitness_dealbreaker: prefs.fitness.dealbreaker,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
       setStep('entry');
     } catch(e:unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');
@@ -288,7 +365,8 @@ export default function OnboardingFlow() {
       {step==='welcome'    && <Welcome onNext={()=>setStep('compact')} />}
       {step==='compact'    && <Compact onNext={()=>setStep('fingerprint')} />}
       {step==='fingerprint'&& <Fingerprint fp={fp} setFp={setFp} onNext={()=>setStep('values')} />}
-      {step==='values'     && <ValuesQ values={values} setValues={setValues} onNext={()=>setStep('completion')} />}
+      {step==='values'     && <ValuesQ values={values} setValues={setValues} onNext={()=>setStep('preferences')} />}
+      {step==='preferences' && <PreferencesQ prefs={prefs} setPrefs={setPrefs} onNext={()=>setStep('completion')} />}
       {step==='completion' && <Completion fp={fp} values={values} onComplete={save} photos={photos} onPhotosChange={setPhotos} userId={currentUserId} loading={loading} />}
       {step==='entry'      && <Entry hasMatch={hasMatch} />}
     </>
