@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { calculateCompatibility, type CompatibilityResult } from '@/lib/bm/calculateCompatibility';
+import { calculateCompatibility, checkDealbreakers, type CompatibilityResult, type DealBreakerResult, type UserPreferences } from '@/lib/bm/calculateCompatibility';
 
 function ScoreRing({ score, size=130 }: { score:number; size?:number }) {
   const [anim, setAnim] = useState(0);
@@ -33,6 +33,7 @@ export default function CompatibilitySnapshot({ matchId, otherUserId }: { matchI
   // supabase already imported
   const [data, setData] = useState<CompatibilityResult|null>(null);
   const [open, setOpen] = useState<string|null>(null);
+  const [dealbreakers, setDealbreakers] = useState<DealBreakerResult|null>(null);
 
   useEffect(()=>{
     (async()=>{
@@ -44,11 +45,38 @@ export default function CompatibilitySnapshot({ matchId, otherUserId }: { matchI
         if (match) otherId = match.user_a_id === user.id ? match.user_b_id : match.user_a_id;
       }
       if (!otherId) return;
-      const [mine, theirs] = await Promise.all([
-        supabase.from('user_values').select('*').eq('user_id',user.id).maybeSingle(),
-        supabase.from('user_values').select('*').eq('user_id',otherId).maybeSingle(),
+      const [mine, theirs, myPrefs, theirPrefs] = await Promise.all([
+        supabase.from('user_values').select('*').eq('id',user.id).maybeSingle(),
+        supabase.from('user_values').select('*').eq('id',otherId).maybeSingle(),
+        supabase.from('user_preferences').select('*').eq('id',user.id).maybeSingle(),
+        supabase.from('user_preferences').select('*').eq('id',otherId).maybeSingle(),
       ]);
       setData(calculateCompatibility(mine.data, theirs.data, matchId));
+      if (myPrefs.data && theirPrefs.data) {
+        const mp: UserPreferences = {
+          political_view: myPrefs.data.political_view, political_dealbreaker: myPrefs.data.political_dealbreaker,
+          religion: myPrefs.data.religion, religion_dealbreaker: myPrefs.data.religion_dealbreaker,
+          diet: myPrefs.data.diet, diet_dealbreaker: myPrefs.data.diet_dealbreaker,
+          drinking: myPrefs.data.drinking, drinking_dealbreaker: myPrefs.data.drinking_dealbreaker,
+          smoking: myPrefs.data.smoking, smoking_dealbreaker: myPrefs.data.smoking_dealbreaker,
+          kids_preference: myPrefs.data.kids_preference, kids_dealbreaker: myPrefs.data.kids_dealbreaker,
+          ethnicity_preference: myPrefs.data.ethnicity_preference, ethnicity_dealbreaker: myPrefs.data.ethnicity_dealbreaker,
+          education_preference: myPrefs.data.education_preference, education_dealbreaker: myPrefs.data.education_dealbreaker,
+          fitness_lifestyle: myPrefs.data.fitness_lifestyle, fitness_dealbreaker: myPrefs.data.fitness_dealbreaker,
+        };
+        const tp: UserPreferences = {
+          political_view: theirPrefs.data.political_view, political_dealbreaker: theirPrefs.data.political_dealbreaker,
+          religion: theirPrefs.data.religion, religion_dealbreaker: theirPrefs.data.religion_dealbreaker,
+          diet: theirPrefs.data.diet, diet_dealbreaker: theirPrefs.data.diet_dealbreaker,
+          drinking: theirPrefs.data.drinking, drinking_dealbreaker: theirPrefs.data.drinking_dealbreaker,
+          smoking: theirPrefs.data.smoking, smoking_dealbreaker: theirPrefs.data.smoking_dealbreaker,
+          kids_preference: theirPrefs.data.kids_preference, kids_dealbreaker: theirPrefs.data.kids_dealbreaker,
+          ethnicity_preference: theirPrefs.data.ethnicity_preference, ethnicity_dealbreaker: theirPrefs.data.ethnicity_dealbreaker,
+          education_preference: theirPrefs.data.education_preference, education_dealbreaker: theirPrefs.data.education_dealbreaker,
+          fitness_lifestyle: theirPrefs.data.fitness_lifestyle, fitness_dealbreaker: theirPrefs.data.fitness_dealbreaker,
+        };
+        setDealbreakers(checkDealbreakers(mp, tp));
+      }
     })();
   },[matchId,otherUserId]);
 
@@ -86,6 +114,14 @@ export default function CompatibilitySnapshot({ matchId, otherUserId }: { matchI
         </div>
       </div>
 
+      {dealbreakers?.blocked && (
+        <div style={{ background:'rgba(248,113,113,0.08)', border:'1px solid rgba(248,113,113,0.25)', borderRadius:12, padding:'14px 16px', marginBottom:16 }}>
+          <p style={{ margin:'0 0 6px', fontSize:12, fontWeight:600, color:'#f87171', fontFamily:'system-ui,sans-serif' }}>🚫 Dealbreaker conflicts</p>
+          {dealbreakers.reasons.map((r,i) => (
+            <p key={i} style={{ margin:'2px 0', fontSize:12, color:'#fca5a5', fontFamily:'system-ui,sans-serif' }}>· {r}</p>
+          ))}
+        </div>
+      )}
       <p style={{ margin:'0 0 14px', fontSize:10, letterSpacing:'0.14em', textTransform:'uppercase', color:'#2e2248', fontFamily:'system-ui,sans-serif' }}>Dimension Breakdown</p>
 
       <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
