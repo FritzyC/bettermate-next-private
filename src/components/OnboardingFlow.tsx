@@ -339,7 +339,7 @@ export default function OnboardingFlow() {
       if (e2) throw e2;
       await supabase.from('integrity_scores').upsert({ id:user.id, score:60, tier:3 },{ onConflict:'id', ignoreDuplicates:true });
       await supabase.from('show_up_streaks').upsert({ id:user.id, current_streak:0, longest_streak:0, freeze_used:false, freeze_available:true },{ onConflict:'id', ignoreDuplicates:true });
-      await supabase.from('user_preferences').upsert({
+      await supabase.from('user_match_preferences').upsert({
         id: user.id,
         political_view: prefs.political.value, political_dealbreaker: prefs.political.dealbreaker,
         religion: prefs.religion.value, religion_dealbreaker: prefs.religion.dealbreaker,
