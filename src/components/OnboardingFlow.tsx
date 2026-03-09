@@ -328,17 +328,14 @@ export default function OnboardingFlow() {
 
   useEffect(() => {
     (async () => {
-      try {
-        const { data:{ user } } = await supabase.auth.getUser();
-        if (!user) { router.replace('/login'); return; }
-        setCurrentUserId(user.id);
-        const { data: fp } = await supabase.from('user_fingerprint').select('onboarding_complete').eq('id', user.id).maybeSingle();
-        if (fp?.onboarding_complete === true) { router.replace('/matches'); return; }
-        const { count } = await supabase.from('matches').select('id',{count:'exact',head:true}).or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`).eq('status','active');
-        setHasMatch((count??0)>0);
-      } finally {
-        setChecking(false);
-      }
+      const { data:{ user } } = await supabase.auth.getUser();
+      if (!user) { router.replace('/login'); return; }
+      setCurrentUserId(user.id);
+      const { data: fp } = await supabase.from('user_fingerprint').select('onboarding_complete').eq('id', user.id).maybeSingle();
+      if (fp?.onboarding_complete === true) { router.replace('/matches'); return; }
+      const { count } = await supabase.from('matches').select('id',{count:'exact',head:true}).or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`).eq('status','active');
+      setHasMatch((count??0)>0);
+      setChecking(false);
     })();
   }, []);
 
