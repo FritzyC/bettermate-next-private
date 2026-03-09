@@ -80,14 +80,14 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
     setActing(true);
     const supabase = getSupabase();
     if (!supabase) return;
-    const { data: match } = await supabase.from('matches').select('user1_id, user2_id').eq('id', matchId).single();
+    const { data: match } = await supabase.from('matches').select('user_a_id, user_b_id').eq('id', matchId).single();
     if (!match) { setActing(false); return; }
 
     const deadline = new Date(Date.now() + 72 * 3600000).toISOString();
     const { data: newPlan } = await supabase.from('date_plans').insert({
       match_id: matchId,
-      user_a_id: match.user1_id,
-      user_b_id: match.user2_id,
+      user_a_id: match.user_a_id,
+      user_b_id: match.user_b_id,
       status: 'pending_commitment',
       commitment_deadline_at: deadline,
     }).select().single();
