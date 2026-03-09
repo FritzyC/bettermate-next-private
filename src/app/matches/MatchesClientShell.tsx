@@ -12,6 +12,7 @@ export default function MatchesClientShell() {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const userIdRef = React.useRef<string | null>(null);
   const [otherUsers, setOtherUsers] = useState<Record<string, { photos: string[]; name: string }>>({});
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export default function MatchesClientShell() {
       if (!user) { router.replace('/auth?next=/matches'); return; }
       setUserEmail(user.email ?? null);
       setUserId(user.id);
+      userIdRef.current = user.id;
       const { data, error } = await supabase
         .from('matches')
         .select('*')
@@ -76,7 +78,7 @@ export default function MatchesClientShell() {
             {matches.map((match) => (
               <a key={match.id} href={'/matches/' + match.id} style={{ display:'flex', alignItems:'center', gap:16, padding:20, background:'rgba(124,58,237,0.06)', borderRadius:16, border:'1px solid rgba(124,58,237,0.12)', textDecoration:'none', color:'#fff' }}>
                 {(() => {
-                  const otherId = match.user_a_id === userId ? match.user_b_id : match.user_a_id;
+                  const otherId = match.user_a_id === (userIdRef.current ?? userId) ? match.user_b_id : match.user_a_id;
                   const ou = otherUsers[otherId];
                   const photo = ou?.photos?.[0];
                   return photo ? (
