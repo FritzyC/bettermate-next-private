@@ -41,6 +41,10 @@ export default function ProfilePage() {
         <h1 style={{ fontFamily:fonts.serif, fontSize:28, color:colors.textPrimary, margin:'0 0 8px' }}>Your Profile</h1>
         <p style={{ fontFamily:fonts.sans, fontSize:15, color:colors.textMuted, margin:'0 0 32px' }}>Update your photos so people can recognise you when you meet.</p>
 
+        {/* Preferences link */}
+        <a href="/preferences" style={{ display:'block', padding:'16px 20px', background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.12)', borderRadius:16, color:'#c4b5fd', fontFamily:"Georgia,serif", fontSize:15, textDecoration:'none', marginBottom:16 }}>
+          ⚙️ Match Preferences & Dealbreakers →
+        </a>
         {/* Photo Upload */}
         <div style={{ padding:20, background:colors.bgCard, border:`1px solid ${colors.borderCard}`, borderRadius:radii.card, marginBottom:24 }}>
           <p style={{ margin:'0 0 4px', fontSize:13, fontWeight:600, color:colors.textPrimary, fontFamily:fonts.sans }}>Profile Photos</p>
