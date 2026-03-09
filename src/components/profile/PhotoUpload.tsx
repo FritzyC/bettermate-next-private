@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import { getSupabase } from '@/lib/supabaseClient'
 
 interface PhotoUploadProps {
   userId: string
@@ -21,10 +22,13 @@ export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChang
   const slotRef = useRef<number>(0)
 
   const upload = useCallback(async (file: File, slot: number) => {
-    // Verify session exists before upload
-    const { data: { session } } = await supabase.auth.getSession()
-    console.log('PHOTO UPLOAD userId:', userId, 'session uid:', session?.user?.id, 'file:', file.name)
-    if (!session) { setErrors(e => ({ ...e, [slot]: 'Not signed in — please refresh' })); return }
+    const client = getSupabase()
+    if (!client) { setErrors(e => ({ ...e, [slot]: 'No Supabase client' })); return }
+    const { data: { session } } = await client.auth.getSession()
+    console.log('PHOTO UPLOAD userId:', userId, 'session uid:', session?.user?.id)
+    if (!session) { setErrors(e => ({ ...e, [slot]: 'Not signed in — please refresh and try again' })); return }
+    // Refresh session to ensure token is fresh
+    await client.auth.refreshSession()
     if (!ALLOWED.includes(file.type)) { setErrors(e => ({ ...e, [slot]: 'JPG, PNG or WebP only' })); return }
     if (file.size > MAX_SIZE) { setErrors(e => ({ ...e, [slot]: 'Max 5MB' })); return }
     setUploading(slot); setErrors(e => { const n = { ...e }; delete n[slot]; return n })
