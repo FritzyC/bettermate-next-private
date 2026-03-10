@@ -283,7 +283,7 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
     if (status === 'venue_confirmed') return '✅ Venue agreed — pick a time';
     if (status === 'venue_mismatch') return '🔄 Different choices — revote needed';
     if (status === 'venues_presented') return '📍 Vote on a venue';
-    if (status === 'pending_commitment') return '⏳ Generating venues...';
+    if (status === 'pending_commitment') return '📍 Enter your location for venues';
     return 'Open date plan';
   };
 
@@ -317,16 +317,29 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
       {open && (
         <div style={{ background: SURFACE, padding: '20px' }}>
 
-          {/* NO PLAN YET */}
-          {!plan && (
+          {/* NO PLAN YET — bond required first */}
+          {!plan && !bondActive && (
+            <div style={{ padding: 16, background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.4)', borderRadius: 14, textAlign: 'center' }}>
+              <div style={{ fontSize: 24, marginBottom: 10 }}>💎</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#C9A96E', marginBottom: 8 }}>Commitment Bond Required</div>
+              <div style={{ fontSize: 12, color: '#9d84d0', lineHeight: 1.6 }}>
+                Both of you must lock a 1500 credit Commitment Bond before choosing venues or scheduling a date.<br /><br />
+                This ensures both people are serious. Scroll down to 💎 Commitment Bond to get started.
+              </div>
+            </div>
+          )}
+
+          {/* NO PLAN YET — bond active, ready to start */}
+          {!plan && bondActive && (
             <div>
-              <div style={{ padding: '16px', background: ELEVATED, borderRadius: 14, border: '1px solid ' + BORDER, marginBottom: 16 }}>
+              <div style={{ padding: '16px', background: ELEVATED, borderRadius: 14, border: '1px solid rgba(34,197,94,0.3)', marginBottom: 16 }}>
+                <div style={{ fontSize: 11, color: SUCCESS, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>💎 Bond Active — Ready to Plan</div>
                 <p style={{ margin: '0 0 12px', fontSize: 14, color: TEXT, lineHeight: 1.7, fontFamily: 'Georgia, serif' }}>
-                  "Within 72 hours, both of you commit to meeting at one of 3 BetterMate-suggested venues. No endless planning. Real intention."
+                  "Both committed. Now let BetterMate suggest 3 real venues near you. Vote, confirm, show up."
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, color: TEXT2 }}>
                   {[
-                    '📍 BetterMate suggests 3 venues based on your shared interests',
+                    '📍 BetterMate suggests 3 venues based on your location',
                     '🗳 Both vote — if you agree, it is confirmed',
                     '⏱ 72 hours to lock in a plan or the window expires',
                     '✅ Both check in after the date to confirm it happened',
@@ -478,14 +491,6 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
                   );
                 })}
               </div>
-            </div>
-          )}
-
-          {status === 'venue_confirmed' && plan.final_venue && !bondActive && (
-            <div style={{ padding: 16, background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 14, textAlign: 'center', marginTop: 12 }}>
-              <div style={{ fontSize: 20, marginBottom: 8 }}>💎</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#C9A96E', marginBottom: 6 }}>Bond Required Before Scheduling</div>
-              <div style={{ fontSize: 12, color: '#9d84d0', lineHeight: 1.5 }}>Both must lock a Commitment Bond (1500 credits) before picking a time. Scroll down to activate the bond.</div>
             </div>
           )}
 
