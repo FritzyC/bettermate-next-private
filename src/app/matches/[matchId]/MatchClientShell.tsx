@@ -131,7 +131,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
           📅 Plan
         </button>
         <button onClick={() => setShowSpotify(!showSpotify)}
-          style={{ padding: '7px 14px', borderRadius: 20, border: '1px solid #1DB954', background: showSpotify ? 'rgba(29,185,84,0.2)' : 'rgba(29,185,84,0.08)', color: '#1DB954', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+          style={{ padding: '7px 14px', borderRadius: 20, border: '2px solid #1DB954', background: showSpotify ? '#1DB954' : 'rgba(29,185,84,0.15)', color: showSpotify ? '#000' : '#1DB954', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
           🎵 Share a Song
         </button>
       </div>
