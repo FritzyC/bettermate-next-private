@@ -11,6 +11,7 @@ import ExpressionSuggester from '@/components/ExpressionSuggester';
 import VibeDrawer from '@/components/VibeDrawer';
 import BlindChat, { isQualifying } from '@/components/BlindChat';
 import DatePlan from '@/components/DatePlan';
+import CommitmentBond from '@/components/CommitmentBond';
 import SpotifySongShare from '@/components/SpotifySongShare';
 
 const COACHING_PROMPTS = [

@@ -192,7 +192,8 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
     if (!supabase) return;
 
     const isA = plan.user_a_id === userId;
-    const times = plan.proposed_times || [];
+    const { data: freshPlan2 } = await supabase.from('date_plans').select('*').eq('match_id', matchId).single();
+    const times = freshPlan2?.proposed_times || plan.proposed_times || [];
     const myTime = time;
     const otherTime = isA ? times.find((t: any) => t.user === 'b')?.time : times.find((t: any) => t.user === 'a')?.time;
     const tag = isA ? 'a' : 'b';
