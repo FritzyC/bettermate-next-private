@@ -31,7 +31,7 @@ function formatCountdown(deadline: string) {
 }
 
 function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 export default function DatePlan({ matchId, userId, inline = false }: { matchId: string; userId: string; inline?: boolean }) {
