@@ -167,14 +167,14 @@ export default function SpotifySongShare({
     // Insert message
     await supabase.from('messages').insert({
       match_id: matchId,
-      sender_id: userId,
+      sender_user_id: userId,
       body: 'Thinking of you — listening to this.',
       message_type: 'song_share',
       metadata: {
         track_id: selected.id,
-        track_name: selected.name,
+        name: selected.name,
         artist: selected.artist,
-        album_art_url: selected.album_art,
+        album_art: selected.album_art,
         preview_url: selected.preview_url,
         external_url: selected.external_url,
       },

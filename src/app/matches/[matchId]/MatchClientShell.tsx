@@ -192,6 +192,18 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
               const isMe = msg.sender_user_id === userId;
               return (
                 <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                  {msg.message_type === 'song_share' && msg.metadata ? (
+                    <div style={{ maxWidth:'80%', background:'#1a0a2e', border:'1px solid #1DB954', borderRadius:16, padding:'12px 16px', display:'flex', gap:12, alignItems:'center' }}>
+                      {msg.metadata.album_art && <img src={msg.metadata.album_art} alt="album" style={{ width:52, height:52, borderRadius:8, flexShrink:0 }} />}
+                      <div>
+                        <p style={{ margin:'0 0 2px', fontSize:13, fontWeight:600, color:'#fff' }}>{msg.metadata.name || 'Song'}</p>
+                        <p style={{ margin:'0 0 4px', fontSize:11, color:'#a0a0b0' }}>{msg.metadata.artist || ''}</p>
+                        <p style={{ margin:'0 0 6px', fontSize:12, color:'#7A6A96', fontStyle:'italic' }}>{msg.body}</p>
+                        {msg.metadata.external_url && <a href={msg.metadata.external_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:11, color:'#1DB954', textDecoration:'none', fontWeight:600 }}>▶ Open in Spotify</a>}
+                        <p style={{ margin:'6px 0 0', fontSize:10, color:'rgba(255,255,255,0.35)' }}>{new Date(msg.created_at).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })}</p>
+                      </div>
+                    </div>
+                  ) : (
                   <div style={{
                     maxWidth: '72%',
                     wordBreak: 'break-word',
@@ -205,6 +217,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
                       {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
+                  )}
                 </div>
               );
             })}
