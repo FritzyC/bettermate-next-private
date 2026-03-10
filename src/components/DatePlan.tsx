@@ -155,9 +155,11 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
     const supabase = getSupabase();
     if (!supabase) return;
 
-    const isA = plan.user_a_id === userId;
+    // Re-fetch plan from DB to get latest votes before comparing
+    const { data: freshPlan } = await supabase.from('date_plans').select('*').eq('match_id', matchId).single();
+    const isA = (freshPlan?.user_a_id ?? plan.user_a_id) === userId;
     const update = isA ? { user_a_choice: venueId } : { user_b_choice: venueId };
-    const otherChoice = isA ? plan.user_b_choice : plan.user_a_choice;
+    const otherChoice = isA ? freshPlan?.user_b_choice : freshPlan?.user_a_choice;
 
     let finalUpdate: any = { ...update };
     if (otherChoice === venueId) {
