@@ -444,7 +444,20 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
               </div>
               <p style={{ margin: '0 0 12px', fontSize: 13, color: TEXT2 }}>Now pick a time. Both need to select the same slot to confirm.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {(plan.final_venue.suggested_times || []).map((time: string, i: number) => {
+                {(() => {
+                  // Generate next 6 time slots: today/tomorrow/day-after at 6pm, 7pm, 8pm
+                  const slots: string[] = [];
+                  const now = new Date();
+                  for (let d = 0; d < 3; d++) {
+                    for (const h of [18, 19, 20]) {
+                      const dt = new Date(now);
+                      dt.setDate(now.getDate() + d);
+                      dt.setHours(h, 0, 0, 0);
+                      if (dt > now) slots.push(dt.toISOString());
+                    }
+                  }
+                  return slots;
+                })().map((time: string, i: number) => {
                   const myTimes = plan.proposed_times || [];
                   const tag = isA ? 'a' : 'b';
                   const myTime = myTimes.find((t: any) => t.user === tag)?.time;
