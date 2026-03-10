@@ -177,6 +177,25 @@ async function resolveBond(bondId: string, bond: any, reason: string) {
     }
   }
 
+  // Issue platform compensation to show-up user (NOT from no-show's credits — platform issued)
+  const rewardUserId = isNoShowA ? bond.user_b_id : isNoShowB ? bond.user_a_id : null
+  if (rewardUserId) {
+    const dedupComp = `bond_compensation_${bondId}_${rewardUserId}`
+    const { data: existingComp } = await (await admin()).from('credit_ledger').select('id').eq('dedup_key', dedupComp).single()
+    if (!existingComp) {
+      const { data: rw } = await (await admin()).from('user_credits').select('balance').eq('user_id', rewardUserId).single()
+      if (rw) {
+        await (await admin()).from('credit_ledger').insert({
+          user_id: rewardUserId, amount: 1000, type: 'bond_compensation_issue',
+          bond_id: bondId, dedup_key: dedupComp
+        })
+        await (await admin()).from('user_credits').update({
+          balance: rw.balance + 1000
+        }).eq('user_id', rewardUserId)
+      }
+    }
+  }
+
   await (await admin()).from('commitment_bonds').update({
     status: penaltyUserId ? 'resolved_penalty' : reason === 'cancelled_safety' ? 'cancelled_safety' : 'completed',
     resolved_at: new Date().toISOString(),
