@@ -6,10 +6,13 @@ export async function POST(req: NextRequest) {
   const googleKey = process.env.GOOGLE_PLACES_API_KEY
   const anthropicKey = process.env.ANTHROPIC_API_KEY
 
+  console.log('venue-suggest: googleKey present:', !!googleKey, 'anthropicKey present:', !!anthropicKey)
+
   // Try Google Places first
   if (googleKey) {
     try {
       const venues = await getGoogleVenues(locationA, locationB, tags, googleKey)
+      console.log('Google venues:', venues.length)
       if (venues.length > 0) return NextResponse.json({ venues })
     } catch (e) {
       console.error('Google Places failed:', e)
@@ -20,6 +23,7 @@ export async function POST(req: NextRequest) {
   if (anthropicKey) {
     try {
       const venues = await getClaudeVenues(locationA, locationB, travelMode, tags, anthropicKey)
+      console.log('Claude venues:', venues.length)
       return NextResponse.json({ venues })
     } catch (e) {
       console.error('Claude venue gen failed:', e)
