@@ -170,6 +170,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       {showDatePlan && userId && (
         <div style={{ flexShrink: 0, maxHeight: '45vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
           <DatePlan matchId={matchId} userId={userId} inline />
+          <CommitmentBond matchId={matchId} userId={userId ?? ''} inline />
         </div>
       )}
 
