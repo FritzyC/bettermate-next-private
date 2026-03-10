@@ -44,6 +44,7 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
   const [locationInput, setLocationInput] = useState('');
   const [showLocationInput, setShowLocationInput] = useState(false);
   const [generatingVenues, setGeneratingVenues] = useState(false);
+  const [bondActive, setBondActive] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showCheckin, setShowCheckin] = useState(false);
@@ -435,7 +436,7 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
           )}
 
           {/* VENUE CONFIRMED — PICK TIME */}
-          {status === 'venue_confirmed' && plan.final_venue && (
+          {status === 'venue_confirmed' && plan.final_venue && bondActive && (
             <div>
               <div style={{ padding: '14px', background: ELEVATED, borderRadius: 12, border: '1px solid rgba(76,175,125,0.3)', marginBottom: 16 }}>
                 <div style={{ fontSize: 11, color: SUCCESS, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Venue Agreed</div>
@@ -477,6 +478,14 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {status === 'venue_confirmed' && plan.final_venue && !bondActive && (
+            <div style={{ padding: 16, background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 14, textAlign: 'center', marginTop: 12 }}>
+              <div style={{ fontSize: 20, marginBottom: 8 }}>💎</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#C9A96E', marginBottom: 6 }}>Bond Required Before Scheduling</div>
+              <div style={{ fontSize: 12, color: '#9d84d0', lineHeight: 1.5 }}>Both must lock a Commitment Bond (1500 credits) before picking a time. Scroll down to activate the bond.</div>
             </div>
           )}
 
