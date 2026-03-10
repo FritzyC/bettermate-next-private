@@ -468,7 +468,7 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
                   return (
                     <button key={i} onClick={() => !acting && selectTime(time)}
                       style={{ padding: '12px 16px', background: isMine ? 'rgba(123,28,74,0.2)' : ELEVATED, border: '1px solid ' + (isMine ? '#7B1C4A' : BORDER), borderRadius: 10, cursor: 'pointer', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 14, color: TEXT }}>{time}</span>
+                      <span style={{ fontSize: 14, color: TEXT }}>{formatDateTime(time)}</span>
                       <div style={{ display: 'flex', gap: 4 }}>
                         {isMine && <span style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(123,28,74,0.3)', borderRadius: 10, color: '#f0a0c0' }}>You</span>}
                         {isTheirs && <span style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(76,175,125,0.2)', borderRadius: 10, color: SUCCESS }}>Them</span>}
