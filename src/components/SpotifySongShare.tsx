@@ -16,7 +16,7 @@ const SUCCESS = '#4CAF7D';
 const SPOTIFY_GREEN = '#1DB954';
 
 const SONG_SHARE_COST = 99;
-const DAILY_LIMIT = 3;
+const DAILY_LIMIT = 999;
 
 type Track = {
   id: string;
