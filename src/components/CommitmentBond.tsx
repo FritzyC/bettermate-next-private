@@ -182,28 +182,37 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
             </div>
           )}
 
-          {/* STEP 1 — AGREE */}
-          {bond && bond.status === 'proposed' && !myAgreed && (
+          {/* STEP 1 — bond exists, user hasn't locked yet */}
+          {bond && bond.status === 'proposed' && !myLocked && (
             <div>
-              <div style={{ padding: 16, background: ELEVATED, borderRadius: 14, border: '1px solid ' + BORDER, marginBottom: 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: TEXT2, marginBottom: 12 }}>Before locking credits, confirm you understand:</div>
+              <div style={{ padding: 16, background: ELEVATED, borderRadius: 14, border: '1px solid ' + GOLD + '50', marginBottom: 16 }}>
+                <div style={{ fontSize: 11, color: GOLD, fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Required Before Scheduling</div>
+                <p style={{ margin: '0 0 16px', fontSize: 15, color: TEXT, lineHeight: 1.75, fontFamily: 'Georgia,serif' }}>
+                  Respect the plan. BetterMate is built for people who follow through. To schedule this date, both of you lock 1500 credits as a pledge.
+                </p>
                 {[
-                  'This locks 1500 credits to protect both people\'s time',
-                  'No-shows forfeit credits and receive an integrity penalty',
-                  'Safety cancellations are always allowed with no penalty',
-                  'Credits are never transferred to the other user',
+                  '✅ Show up: you get your credits back',
+                  '❌ No-show: you forfeit credits and Integrity drops',
+                  '💸 If they no-show: BetterMate credits you 1000 for your time',
+                  '🛡 Safety first: cancel for safety and your credits unlock',
                 ].map((item, i) => (
-                  <div key={i} style={{ padding: '6px 12px', fontSize: 12, color: TEXT2, borderLeft: '2px solid ' + BRAND, marginBottom: 6 }}>{item}</div>
+                  <div key={i} style={{ padding: '9px 14px', fontSize: 13, color: TEXT2, background: 'rgba(255,255,255,0.04)', borderRadius: 10, marginBottom: 8, lineHeight: 1.5 }}>{item}</div>
                 ))}
-                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ marginTop: 2, accentColor: BRAND }} />
-                  <span style={{ fontSize: 12, color: TEXT2, lineHeight: 1.5 }}>I understand this locks 1500 credits as a commitment. No-shows forfeit credits and reduce integrity.</span>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 16, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ marginTop: 3, accentColor: GOLD, width: 16, height: 16 }} />
+                  <span style={{ fontSize: 13, color: TEXT2, lineHeight: 1.55 }}>{"I'm committing to show up or cancel responsibly."}</span>
                 </label>
               </div>
-              <button onClick={() => { if (agreed) api('agree') }} disabled={!agreed || acting}
-                style={{ width: '100%', padding: 14, background: agreed ? BRAND : ELEVATED, border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 600, cursor: agreed ? 'pointer' : 'not-allowed' }}>
-                {acting ? 'Saving...' : 'I Agree — Continue to Lock Credits'}
-              </button>
+              {credits < BOND_AMOUNT ? (
+                <div style={{ padding: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid ' + ERROR, borderRadius: 12, fontSize: 13, color: ERROR, textAlign: 'center' }}>
+                  You need 1500 credits to lock a pledge. You have {credits}.
+                </div>
+              ) : (
+                <button onClick={() => { if (agreed) apiLockPledge() }} disabled={acting || !agreed}
+                  style={{ width: '100%', padding: 14, background: agreed ? GOLD : ELEVATED, border: 'none', borderRadius: 12, color: agreed ? '#000' : MUTED, fontSize: 14, fontWeight: 700, cursor: agreed ? 'pointer' : 'not-allowed' }}>
+                  {acting ? 'Locking...' : 'Lock Pledge'}
+                </button>
+              )}
             </div>
           )}
 
