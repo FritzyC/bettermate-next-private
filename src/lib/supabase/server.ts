@@ -22,5 +22,9 @@ export async function getServerSupabaseClient() {
 }
 
 export async function getSupabaseAdmin() {
-  return getServerSupabaseClient();
+  const { createClient } = await import('@supabase/supabase-js');
+  const url = getSupabaseUrl();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) throw new Error('Missing Supabase admin credentials');
+  return createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
 }
