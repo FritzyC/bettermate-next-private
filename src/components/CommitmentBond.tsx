@@ -129,8 +129,8 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
                 </p>
                 {[
                   '✅ Both show up → 1500 credits return to each of you',
-                  '❌ No-show → 1500 credits forfeited to BetterMate + integrity penalty',
-                  '💸 If they no-show, BetterMate issues you 1000 time-respect credits',
+                  '❌ Both no-show → 1000 credits forfeited each to BetterMate + integrity penalty, 500 credits return to each',
+                  '💸 One user no-shows → BetterMate issues 1000 credits to the other user, 500 go to BetterMate',
                   '🛡 Safety cancel → credits return, no penalty',
                 ].map((item, i) => (
                   <div key={i} style={{ padding: '8px 12px', fontSize: 12, color: TEXT2, background: 'rgba(255,255,255,0.03)', borderRadius: 8, marginBottom: 6 }}>{item}</div>
