@@ -115,7 +115,7 @@ export default function CommitmentBond({ matchId, userId, inline = false, planSc
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 16 }}>💎</span>
           <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: bond?.status === 'active' ? SUCCESS : TEXT2 }}>Commitment Bond</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: bond?.status === 'active' ? SUCCESS : TEXT2 }}>Date Pledge Bond</div>
             <div style={{ fontSize: 11, color: MUTED }}>{statusLabel()}</div>
           </div>
         </div>
@@ -304,8 +304,9 @@ export default function CommitmentBond({ matchId, userId, inline = false, planSc
 
           {bond?.status === 'active' && !planScheduled && (
             <div style={{ padding: 14, background: 'rgba(34,197,94,0.08)', border: '1px solid ' + SUCCESS + '40', borderRadius: 14, textAlign: 'center' }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: SUCCESS }}>🔒 Bond Active</div>
-              <div style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>Go to 📅 Plan above to choose a venue and schedule your date. Check-in will appear here after your date is confirmed.</div>
+              <div style={{ fontSize: 20, marginBottom: 8 }}>🔒</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: SUCCESS }}>Both pledges locked.</div>
+              <div style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>Your date is being confirmed. Check-in will appear here after the date.</div>
             </div>
           )}
 

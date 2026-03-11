@@ -223,14 +223,9 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
 
     let update: any = { proposed_times: newTimes };
     if (otherTime === time) {
-      const checkinDeadline = new Date(new Date(time).getTime() + 24 * 3600000).toISOString();
-      update = { ...update, final_time: time, status: 'plan_scheduled', checkin_deadline_at: checkinDeadline };
-      await supabase.from('messages').insert({
-        match_id: matchId,
-        sender_user_id: userId,
-        body: '🗓 Date confirmed for ' + formatDateTime(time) + '. See you there.',
-      });
-      await trackEvent('plan_time_confirmed', { time }, matchId);
+      // Both picked same time — require pledge before confirming
+      update = { ...update, final_time: time, status: 'pending_pledge' };
+      await trackEvent('plan_time_selected', { time }, matchId);
     } else {
       await trackEvent('plan_time_selected', { time }, matchId);
     }
@@ -240,6 +235,29 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
     setSelectedTime(time);
     setActing(false);
   }
+
+  async function confirmDate(time: string) {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    const checkinDeadline = new Date(new Date(time).getTime() + 24 * 3600000).toISOString();
+    const { data: updated } = await supabase.from('date_plans')
+      .update({ status: 'plan_scheduled', checkin_deadline_at: checkinDeadline })
+      .eq('match_id', matchId).select().single();
+    if (updated) setPlan(updated);
+    await supabase.from('messages').insert({
+      match_id: matchId,
+      sender_user_id: userId,
+      body: '🗓 Date confirmed for ' + formatDateTime(time) + '. Pledge active. See you there.',
+    });
+    await trackEvent('plan_time_confirmed', { time }, matchId);
+  }
+
+  // Auto-confirm date when bond goes active and time was already agreed
+  useEffect(() => {
+    if (bondActive && plan?.status === 'pending_pledge' && plan?.final_time) {
+      confirmDate(plan.final_time);
+    }
+  }, [bondActive, plan?.status]);
 
   async function checkin(showed: boolean) {
     setActing(true);
@@ -305,6 +323,7 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
     if (status === 'venue_mismatch') return '🔄 Different choices — revote needed';
     if (status === 'venues_presented') return '📍 Vote on a venue';
     if (status === 'pending_commitment') return '📍 Enter your location for venues';
+    if (status === 'pending_pledge') return '💎 Time agreed — pledge required to confirm';
     return 'Open date plan';
   };
 
@@ -338,32 +357,19 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
       {open && (
         <div style={{ background: SURFACE, padding: '20px' }}>
 
-          {/* NO PLAN YET — bond required first */}
-          {!plan && !bondActive && (
-            <div style={{ padding: 16, background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.4)', borderRadius: 14, textAlign: 'center' }}>
-              <div style={{ fontSize: 24, marginBottom: 10 }}>💎</div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#C9A96E', marginBottom: 8 }}>Commitment Bond Required</div>
-              <div style={{ fontSize: 12, color: '#9d84d0', lineHeight: 1.6 }}>
-                Both of you must lock a 1500 credit Commitment Bond before choosing venues or scheduling a date.<br /><br />
-                This ensures both people are serious. Scroll down to 💎 Commitment Bond to get started.
-              </div>
-            </div>
-          )}
-
-          {/* NO PLAN YET — bond active, ready to start */}
-          {!plan && bondActive && (
+          {/* NO PLAN YET — start freely */}
+          {!plan && (
             <div>
-              <div style={{ padding: '16px', background: ELEVATED, borderRadius: 14, border: '1px solid rgba(34,197,94,0.3)', marginBottom: 16 }}>
-                <div style={{ fontSize: 11, color: SUCCESS, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>💎 Bond Active — Ready to Plan</div>
+              <div style={{ padding: '16px', background: ELEVATED, borderRadius: 14, border: '1px solid ' + BORDER, marginBottom: 16 }}>
                 <p style={{ margin: '0 0 12px', fontSize: 14, color: TEXT, lineHeight: 1.7, fontFamily: 'Georgia, serif' }}>
-                  "Both committed. Now let BetterMate suggest 3 real venues near you. Vote, confirm, show up."
+                  "Pick a venue, agree on a time. BetterMate holds both of you accountable."
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, color: TEXT2 }}>
                   {[
-                    '📍 BetterMate suggests 3 venues based on your location',
+                    '📍 BetterMate suggests 3 venues near your midpoint',
                     '🗳 Both vote — if you agree, it is confirmed',
-                    '⏱ 72 hours to lock in a plan or the window expires',
-                    '✅ Both check in after the date to confirm it happened',
+                    '💎 Both lock a pledge before the date is finalized',
+                    '✅ Both check in after the date to release credits',
                   ].map((item, i) => (
                     <div key={i} style={{ padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>{item}</div>
                   ))}
@@ -371,7 +377,7 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
               </div>
               <button onClick={startPlan} disabled={acting}
                 style={{ width: '100%', padding: '14px', background: BRAND, border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                {acting ? 'Starting...' : 'Start 72-Hour Commitment'}
+                {acting ? 'Starting...' : 'Start 72-Hour Date Plan'}
               </button>
             </div>
           )}
@@ -512,6 +518,27 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* PENDING PLEDGE — time agreed, waiting for both to lock */}
+          {status === 'pending_pledge' && plan?.final_time && (
+            <div style={{ padding: 20, background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.5)', borderRadius: 16, textAlign: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#C9A96E', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Time Agreed</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#ffffff', marginBottom: 6 }}>{formatDateTime(plan.final_time)}</div>
+              <div style={{ fontSize: 13, color: '#c4b5fd', marginBottom: 16, lineHeight: 1.6 }}>
+                Both of you selected this time. To confirm the date, both must lock the Date Pledge Bond below.
+              </div>
+              {bondActive ? (
+                <div style={{ fontSize: 13, color: '#22c55e', fontWeight: 600 }}>✓ Bond active — confirming date...</div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 12, color: '#9d84d0', marginBottom: 12 }}>
+                    Scroll down to 💎 Date Pledge Bond to lock your pledge.
+                  </div>
+                  <div style={{ fontSize: 11, color: '#7A6A96' }}>The date will confirm automatically once both pledges are locked.</div>
+                </div>
+              )}
             </div>
           )}
 
