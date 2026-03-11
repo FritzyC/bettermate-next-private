@@ -84,7 +84,15 @@ export type EventType =
   | 'ritual_plan_started'
   | 'ritual_attended'
   | 'ritual_skipped'
-  | 'plan_fairness_explainer_opened';
+  | 'plan_fairness_explainer_opened'
+  | 'pledge.shown'
+  | 'pledge.accepted'
+  | 'bond.lock_attempt'
+  | 'bond.locked'
+  | 'bond.active'
+  | 'bond.checkin_prompt_shown'
+  | 'bond.checkin_submitted'
+  | 'bond.resolved';
 export async function trackEvent(
   eventType: EventType,
   payload: Record<string, any> = {},

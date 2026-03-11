@@ -206,7 +206,7 @@ export default function VibeDrawer({
                     )}
                     {section.id === 'commitment_bond' && (
                       <div style={{ padding: '0 0 4px' }}>
-                        <CommitmentBond matchId={matchId} userId={userId} inline />
+                        <CommitmentBond matchId={matchId} userId={userId} planStatus={null} scheduledAt={null} />
                       </div>
                     )}
                     {section.id === 'date_plan' && (
