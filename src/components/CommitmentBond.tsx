@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
+import AddCredits from '@/components/AddCredits'
 import { trackEvent } from '@/lib/bm/track'
 
 const SURFACE = '#1a0a2e'; const ELEVATED = '#2d1052'; const BORDER = '#5A3A8A'
@@ -16,6 +17,7 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
   const [acting, setActing] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showTopup, setShowTopup] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -170,9 +172,24 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
                 </label>
               </div>
               {credits < BOND_AMOUNT ? (
-                <div style={{ padding: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid ' + ERROR, borderRadius: 12, fontSize: 13, color: ERROR, textAlign: 'center' }}>
-                  You need 1500 credits to lock a pledge. You have {credits}.
-                </div>
+                showTopup ? (
+                  <AddCredits shortfall={BOND_AMOUNT - credits} onCancel={() => setShowTopup(false)} onSuccess={async () => {
+                    await new Promise(r => setTimeout(r, 3000))
+                    const { data: w } = await supabase.from('user_credits').select('balance').eq('user_id', userId).single()
+                    setCredits(w?.balance || 0)
+                    setShowTopup(false)
+                  }} />
+                ) : (
+                  <div>
+                    <div style={{ padding: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid ' + ERROR, borderRadius: 12, fontSize: 13, color: ERROR, textAlign: 'center', marginBottom: 10 }}>
+                      You need {BOND_AMOUNT - credits} more credits to lock the pledge. You have {credits}.
+                    </div>
+                    <button onClick={() => setShowTopup(true)}
+                      style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#000', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                      Add Credits & Lock Pledge
+                    </button>
+                  </div>
+                )
               ) : (
                 <button onClick={() => { if (agreed) apiLockPledge() }} disabled={acting || !agreed}
                   style={{ width: '100%', padding: 14, background: agreed ? GOLD : ELEVATED, border: 'none', borderRadius: 12, color: agreed ? '#000' : MUTED, fontSize: 14, fontWeight: 700, cursor: agreed ? 'pointer' : 'not-allowed', letterSpacing: '0.02em' }}>
