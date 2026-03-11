@@ -168,10 +168,10 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       )}
 
       {/* Date Plan */}
+      {userId && <CommitmentBond matchId={matchId} userId={userId} planStatus={planStatus} scheduledAt={null} />}
       {showDatePlan && userId && (
         <div style={{ flexShrink: 0, maxHeight: '45vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
           <DatePlan matchId={matchId} userId={userId} inline />
-          {userId && <CommitmentBond matchId={matchId} userId={userId} planStatus={planStatus} scheduledAt={null} />}
         </div>
       )}
 
