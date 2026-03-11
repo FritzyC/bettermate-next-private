@@ -16,6 +16,7 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
   const [acting, setActing] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!userId) return
@@ -40,7 +41,8 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
   async function api(action: string, extra?: any) {
     setActing(true)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { setActing(false); return }
+    setError(null)
+    if (!session) { setError('Not logged in'); setActing(false); return }
     const res = await fetch('/api/bond', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
@@ -59,22 +61,23 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
   async function apiLockPledge() {
     setActing(true)
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { setActing(false); return }
+    setError(null)
+    if (!session) { setError('Not logged in'); setActing(false); return }
     const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }
     // Step 1: create bond if needed
     if (!bond) {
       const r1 = await fetch('/api/bond', { method: 'POST', headers, body: JSON.stringify({ action: 'create', matchId }) })
       const d1 = await r1.json()
-      if (d1.error && d1.error !== 'Bond already exists') { console.error('create failed', d1); setActing(false); return }
+      if (d1.error && d1.error !== 'Bond already exists') { setError('Create failed: ' + d1.error); setActing(false); return }
     }
     // Step 2: agree
     const r2 = await fetch('/api/bond', { method: 'POST', headers, body: JSON.stringify({ action: 'agree', matchId }) })
     const d2 = await r2.json()
-    if (d2.error) { console.error('agree failed', d2); setActing(false); return }
+    if (d2.error) { setError('Agree failed: ' + d2.error); setActing(false); return }
     // Step 3: lock
     const r3 = await fetch('/api/bond', { method: 'POST', headers, body: JSON.stringify({ action: 'lock', matchId }) })
     const d3 = await r3.json()
-    if (d3.error) { console.error('lock failed', d3); setActing(false); return }
+    if (d3.error) { setError('Lock failed: ' + d3.error); setActing(false); return }
     if (d3.bond) setBond(d3.bond)
     const { data: w } = await supabase.from('user_credits').select('balance').eq('user_id', userId).single()
     setCredits(w?.balance || 0)
@@ -144,6 +147,7 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
             </div>
           )}
 
+          {error && <div style={{ padding: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', borderRadius: 10, fontSize: 12, color: '#ef4444', marginBottom: 12 }}>{error}</div>}
           {/* NO BOND YET — CREATE */}
           {!bond && (
             <div>
