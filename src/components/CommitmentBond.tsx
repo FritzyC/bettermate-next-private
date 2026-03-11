@@ -56,6 +56,31 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
     await trackEvent('bond_proposed', { match_id: matchId, action }, matchId)
   }
 
+  async function apiLockPledge() {
+    setActing(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setActing(false); return }
+    const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token }
+    // Step 1: create bond if needed
+    if (!bond) {
+      const r1 = await fetch('/api/bond', { method: 'POST', headers, body: JSON.stringify({ action: 'create', matchId }) })
+      const d1 = await r1.json()
+      if (d1.error && d1.error !== 'Bond already exists') { console.error('create failed', d1); setActing(false); return }
+    }
+    // Step 2: agree
+    const r2 = await fetch('/api/bond', { method: 'POST', headers, body: JSON.stringify({ action: 'agree', matchId }) })
+    const d2 = await r2.json()
+    if (d2.error) { console.error('agree failed', d2); setActing(false); return }
+    // Step 3: lock
+    const r3 = await fetch('/api/bond', { method: 'POST', headers, body: JSON.stringify({ action: 'lock', matchId }) })
+    const d3 = await r3.json()
+    if (d3.error) { console.error('lock failed', d3); setActing(false); return }
+    if (d3.bond) setBond(d3.bond)
+    const { data: w } = await supabase.from('user_credits').select('balance').eq('user_id', userId).single()
+    setCredits(w?.balance || 0)
+    setActing(false)
+  }
+
   const isA = bond?.user_a_id === userId
   const myAgreed = bond ? (isA ? bond.agreed_a : bond.agreed_b) : false
   const myLocked = bond ? (isA ? bond.locked_a : bond.locked_b) : false
@@ -145,7 +170,7 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
                   You need 1500 credits to lock a pledge. You have {credits}.
                 </div>
               ) : (
-                <button onClick={() => { if (agreed) api('create') }} disabled={acting || !agreed}
+                <button onClick={() => { if (agreed) apiLockPledge() }} disabled={acting || !agreed}
                   style={{ width: '100%', padding: 14, background: agreed ? GOLD : ELEVATED, border: 'none', borderRadius: 12, color: agreed ? '#000' : MUTED, fontSize: 14, fontWeight: 700, cursor: agreed ? 'pointer' : 'not-allowed', letterSpacing: '0.02em' }}>
                   {acting ? 'Locking...' : 'Lock Pledge'}
                 </button>
