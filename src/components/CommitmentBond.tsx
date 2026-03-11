@@ -123,27 +123,31 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
           {!bond && (
             <div>
               <div style={{ padding: 16, background: ELEVATED, borderRadius: 14, border: '1px solid ' + GOLD + '50', marginBottom: 16 }}>
-                <div style={{ fontSize: 12, color: GOLD, fontWeight: 600, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Required Before Scheduling</div>
-                <p style={{ margin: '0 0 14px', fontSize: 14, color: TEXT, lineHeight: 1.7, fontFamily: 'Georgia,serif' }}>
-                  Both of you lock 1500 credits as a pledge to show up. No flaking. If both arrive, credits return in full.
+                <div style={{ fontSize: 11, color: GOLD, fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Required Before Scheduling</div>
+                <p style={{ margin: '0 0 16px', fontSize: 15, color: TEXT, lineHeight: 1.75, fontFamily: 'Georgia,serif' }}>
+                  Respect the plan. BetterMate is built for people who follow through. To schedule this date, both of you lock 1500 credits as a pledge.
                 </p>
                 {[
-                  '✅ Both show up → 1500 credits return to each of you',
-                  '❌ Both no-show → 1000 credits forfeited each to BetterMate + integrity penalty, 500 credits return to each',
-                  '💸 One user no-shows → BetterMate issues 1000 credits to the other user, 500 go to BetterMate',
-                  '🛡 Safety cancel → credits return, no penalty',
+                  '✅ Show up: you get your credits back',
+                  '❌ No-show: you forfeit credits and Integrity drops',
+                  '💸 If they no-show: BetterMate credits you 1000 for your time',
+                  '🛡 Safety first: cancel for safety and your credits unlock',
                 ].map((item, i) => (
-                  <div key={i} style={{ padding: '8px 12px', fontSize: 12, color: TEXT2, background: 'rgba(255,255,255,0.03)', borderRadius: 8, marginBottom: 6 }}>{item}</div>
+                  <div key={i} style={{ padding: '9px 14px', fontSize: 13, color: TEXT2, background: 'rgba(255,255,255,0.04)', borderRadius: 10, marginBottom: 8, lineHeight: 1.5 }}>{item}</div>
                 ))}
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 16, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ marginTop: 3, accentColor: GOLD, width: 16, height: 16 }} />
+                  <span style={{ fontSize: 13, color: TEXT2, lineHeight: 1.55 }}>I'm committing to show up or cancel responsibly.</span>
+                </label>
               </div>
               {credits < BOND_AMOUNT ? (
                 <div style={{ padding: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid ' + ERROR, borderRadius: 12, fontSize: 13, color: ERROR, textAlign: 'center' }}>
-                  You need 1500 credits to create a bond. You have {credits}.
+                  You need 1500 credits to lock a pledge. You have {credits}.
                 </div>
               ) : (
-                <button onClick={() => api('create')} disabled={acting}
-                  style={{ width: '100%', padding: 14, background: BRAND, border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
-                  {acting ? 'Creating...' : 'Create Commitment Bond'}
+                <button onClick={() => { if (agreed) api('create') }} disabled={acting || !agreed}
+                  style={{ width: '100%', padding: 14, background: agreed ? GOLD : ELEVATED, border: 'none', borderRadius: 12, color: agreed ? '#000' : MUTED, fontSize: 14, fontWeight: 700, cursor: agreed ? 'pointer' : 'not-allowed', letterSpacing: '0.02em' }}>
+                  {acting ? 'Locking...' : 'Lock Pledge'}
                 </button>
               )}
             </div>
