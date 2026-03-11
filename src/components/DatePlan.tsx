@@ -45,6 +45,27 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
   const [showLocationInput, setShowLocationInput] = useState(false);
   const [generatingVenues, setGeneratingVenues] = useState(false);
   const [bondActive, setBondActive] = useState(false);
+
+  useEffect(() => {
+    const sb = getSupabase()
+    if (!sb) return
+    async function checkBond() {
+      const { data: { session } } = await sb!.auth.getSession()
+      if (!session) return
+      const res = await fetch('/api/bond?matchId=' + matchId, {
+        headers: { Authorization: 'Bearer ' + session.access_token }
+      })
+      const d = await res.json()
+      if (d.bond?.status === 'active') setBondActive(true)
+    }
+    checkBond()
+    const ch = sb.channel('bond_dateplan_' + matchId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'commitment_bonds', filter: 'match_id=eq.' + matchId }, (payload: any) => {
+        if (payload.new?.status === 'active') setBondActive(true)
+      })
+      .subscribe()
+    return () => { sb.removeChannel(ch) }
+  }, [matchId])
   const [selectedVenue, setSelectedVenue] = useState<string | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [showCheckin, setShowCheckin] = useState(false);
