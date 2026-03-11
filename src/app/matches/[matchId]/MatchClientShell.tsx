@@ -29,6 +29,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
+  const [planStatus, setPlanStatus] = useState<string>('');
   const [showSnapshot, setShowSnapshot] = useState(false);
   const [vibeOpen, setVibeOpen] = useState(false);
   const [blindRevealed, setBlindRevealed] = useState(false);
@@ -170,7 +171,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       {showDatePlan && userId && (
         <div style={{ flexShrink: 0, maxHeight: '45vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
           <DatePlan matchId={matchId} userId={userId} inline />
-          {userId && <CommitmentBond matchId={matchId} userId={userId} inline />}
+          {userId && <CommitmentBond matchId={matchId} userId={userId} inline planScheduled={planStatus === 'plan_scheduled'} />}
         </div>
       )}
 

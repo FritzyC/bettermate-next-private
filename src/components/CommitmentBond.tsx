@@ -10,7 +10,7 @@ const BRAND = '#7c3aed'; const SUCCESS = '#22c55e'; const ERROR = '#ef4444'
 const GOLD = '#C9A96E'
 const BOND_AMOUNT = 1500
 
-export default function CommitmentBond({ matchId, userId, inline = false }: { matchId: string; userId: string; inline?: boolean }) {
+export default function CommitmentBond({ matchId, userId, inline = false, planScheduled = false }: { matchId: string; userId: string; inline?: boolean; planScheduled?: boolean }) {
   const [open, setOpen] = useState(false)
   const [bond, setBond] = useState<any>(null)
   const [credits, setCredits] = useState(0)
@@ -275,7 +275,7 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
           )}
 
           {/* ACTIVE */}
-          {bond?.status === 'active' && !myCheckin && (
+          {bond?.status === 'active' && !myCheckin && planScheduled && (
             <div>
               <div style={{ padding: 14, background: 'rgba(34,197,94,0.08)', border: '1px solid ' + SUCCESS + '40', borderRadius: 14, marginBottom: 16, textAlign: 'center' }}>
                 <div style={{ fontSize: 20, marginBottom: 6 }}>🔒</div>
@@ -299,6 +299,13 @@ export default function CommitmentBond({ matchId, userId, inline = false }: { ma
                   🛡 Safety concern — cancel bond
                 </button>
               </div>
+            </div>
+          )}
+
+          {bond?.status === 'active' && !planScheduled && (
+            <div style={{ padding: 14, background: 'rgba(34,197,94,0.08)', border: '1px solid ' + SUCCESS + '40', borderRadius: 14, textAlign: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: SUCCESS }}>🔒 Bond Active</div>
+              <div style={{ fontSize: 12, color: MUTED, marginTop: 6 }}>Go to 📅 Plan above to choose a venue and schedule your date. Check-in will appear here after your date is confirmed.</div>
             </div>
           )}
 
