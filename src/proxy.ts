@@ -9,6 +9,9 @@ const PUBLIC_PREFIXES = [
   "/favicon",
   "/admin",
   "/onboarding",
+  "/login",
+  "/signup",
+  "/loging",
 ]
 
 function isPublic(pathname: string): boolean {
@@ -53,10 +56,10 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // If we can't determine auth status from cookies, let request through.
-  // Client-side guards handle unauthenticated users.
   if (!user) {
-    return response
+    const loginUrl = new URL("/login", request.url)
+    loginUrl.searchParams.set("next", pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   if (!pathname.startsWith("/onboarding")) {
