@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSupabaseClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +16,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "invalid_token", code: "invalid_token" }, { status: 400 });
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
+    let user = (await supabase.auth.getUser()).data.user ?? null;
+
+    // Fallback: try bearer token from Authorization header
+    if (!user) {
+      const bearer = req.headers.get("authorization")?.replace("Bearer ", "").trim();
+      if (bearer) {
+        const admin = await getSupabaseAdmin();
+        const { data } = await admin.auth.getUser(bearer);
+        user = data.user ?? null;
+      }
+    }
+
     if (!user) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }

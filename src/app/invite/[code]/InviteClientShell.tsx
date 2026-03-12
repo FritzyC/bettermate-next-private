@@ -20,6 +20,16 @@ export default function InviteClientShell({ code }: { code: string }) {
   const [acceptError, setAcceptError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Auto-accept if user is already authenticated
+    const supabase = getSupabase()
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) handleAccept()
+      })
+    }
+  }, [code])
+
+  useEffect(() => {
     fetch("/api/invites/preview?token=" + code)
       .then((r) => r.json())
       .then((d) => {

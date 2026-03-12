@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getSupabase } from '@/lib/supabaseClient';
 import { trackEvent } from '@/lib/bm/track';
 
@@ -73,7 +73,9 @@ const STEPS = [
 ];
 
 export default function FingerprintClient() {
-  const router = useRouter();
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const nextPath = searchParams?.get('next') ?? '/matches';
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
 
@@ -130,7 +132,7 @@ export default function FingerprintClient() {
     });
 
     await trackEvent('onboarding_completed', { stage: 'fingerprint' });
-    router.replace('/matches');
+    router.replace(nextPath);
   }
 
   return (

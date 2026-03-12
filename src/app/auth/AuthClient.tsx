@@ -2,9 +2,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { getSupabase } from '@/lib/supabaseClient';
 
 export function AuthClient(): React.ReactElement {
+  const searchParams = useSearchParams();
+  const nextPath = searchParams?.get('next') ?? '/matches';
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -26,7 +29,7 @@ export function AuthClient(): React.ReactElement {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/matches`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     });
     if (error) {
@@ -43,7 +46,7 @@ export function AuthClient(): React.ReactElement {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/matches`,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     });
     if (error) {
