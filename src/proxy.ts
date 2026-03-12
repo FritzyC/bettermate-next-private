@@ -56,10 +56,9 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Auth is handled client-side via useOnboardingGuard and page-level checks
   if (!user) {
-    const loginUrl = new URL("/login", request.url)
-    loginUrl.searchParams.set("next", pathname)
-    return NextResponse.redirect(loginUrl)
+    return response
   }
 
   if (!pathname.startsWith("/onboarding")) {
