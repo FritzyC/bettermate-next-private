@@ -104,6 +104,8 @@ export default function CommitmentBond({ matchId, userId, planStatus, scheduledA
   const [resolution, setResolution] = useState<ResolutionType | null>(null)
   const [myRole, setMyRole] = useState<'a' | 'b' | null>(null)
   const [checkinSubmitted, setCheckinSubmitted] = useState<CheckinValue | null>(null)
+  const [venue, setVenue] = useState<string | null>(null)
+  const [effectiveScheduledAt, setEffectiveScheduledAt] = useState<string | null>(null)
 
   const apiBond = useCallback(async (body: Record<string, unknown>) => {
     const res = await fetch('/api/bond', {
@@ -120,6 +122,8 @@ export default function CommitmentBond({ matchId, userId, planStatus, scheduledA
     const fetchedBond: Bond | null = data.bond ?? null
     const fetchedCredits: Credits = data.credits ?? { balance: 0, locked_balance: 0 }
     const fetchedScheduledAt: string | null = data.scheduledAt ?? scheduledAt ?? null
+    setEffectiveScheduledAt(fetchedScheduledAt)
+    if (data.venue) setVenue(data.venue)
     setBond(fetchedBond)
     setCredits(fetchedCredits)
     if (fetchedBond) {
@@ -288,12 +292,25 @@ export default function CommitmentBond({ matchId, userId, planStatus, scheduledA
   )
 
   if (view === 'both_locked') {
-    const dateStr = scheduledAt ?? bond?.scheduled_at
+    const dateStr = effectiveScheduledAt ?? scheduledAt ?? bond?.scheduled_at
     return (
       <div style={{ ...container, textAlign: 'center' }}>
-        <h3 style={{ margin: '0 0 8px', color: gold, fontSize: 17, fontWeight: 600 }}>Date locked in. Both pledges are active.</h3>
-        <p style={{ color: colors.textSecondary, fontSize: 13, margin: '0 0 8px' }}>Check in after the date to release your credits.</p>
-        {dateStr && <p style={{ color: colors.textMuted, fontSize: 12, margin: 0 }}>Scheduled: {formatDate(dateStr)}</p>}
+        <h3 style={{ margin: '0 0 12px', color: gold, fontSize: 17, fontWeight: 600 }}>Date locked in. Both pledges are active.</h3>
+        {venue && (
+          <div style={{ background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: 10, padding: '12px 16px', marginBottom: 12 }}>
+            <p style={{ margin: '0 0 2px', color: colors.textMuted, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Venue</p>
+            <p style={{ margin: 0, color: gold, fontSize: 15, fontWeight: 600 }}>{venue}</p>
+          </div>
+        )}
+        {dateStr && (
+          <div style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', borderRadius: 10, padding: '12px 16px', marginBottom: 12 }}>
+            <p style={{ margin: '0 0 2px', color: colors.textMuted, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Date & Time</p>
+            <p style={{ margin: 0, color: colors.textPrimary, fontSize: 15, fontWeight: 600 }}>{formatDate(dateStr)}</p>
+          </div>
+        )}
+        <p style={{ color: colors.textSecondary, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+          Check in after the date to release your credits.
+        </p>
       </div>
     )
   }
