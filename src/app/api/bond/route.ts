@@ -29,6 +29,12 @@ interface Bond {
   scheduled_at: string | null
   resolved_at: string | null
   resolution_type: ResolutionType | null
+  arrived_a: boolean
+  arrived_b: boolean
+  arrived_a_at: string | null
+  arrived_b_at: string | null
+  venue_lat: number | null
+  venue_lng: number | null
   created_at: string
 }
 
@@ -42,9 +48,9 @@ export async function GET(req: NextRequest) {
   if (!matchId || !userId) return NextResponse.json({ error: 'missing params' }, { status: 400 })
   const { data: bond } = await admin.from('commitment_bonds').select('*').eq('match_id', matchId).maybeSingle()
   const { data: credits } = await admin.from('user_credits').select('balance, locked_balance').eq('user_id', userId).maybeSingle()
-  const { data: plan } = await admin.from('date_plans').select('final_time, status, final_venue').eq('match_id', matchId).maybeSingle()
+  const { data: plan } = await admin.from('date_plans').select('final_time, status, final_venue, venue_lat, venue_lng').eq('match_id', matchId).maybeSingle()
   const scheduledAt = bond?.scheduled_at ?? plan?.final_time ?? null
-  return NextResponse.json({ bond: bond ?? null, credits: credits ?? { balance: 0, locked_balance: 0 }, scheduledAt, venue: plan?.final_venue?.name ?? null })
+  return NextResponse.json({ bond: bond ?? null, credits: credits ?? { balance: 0, locked_balance: 0 }, scheduledAt, venue: plan?.final_venue?.name ?? null, venueLat: plan?.venue_lat ?? null, venueLng: plan?.venue_lng ?? null })
 }
 
 export async function POST(req: NextRequest) {
@@ -98,6 +104,18 @@ export async function POST(req: NextRequest) {
       await admin.from('messages').insert({ match_id: matchId, sender_user_id: null, content: '📅 Date confirmed. Both pledges are locked. Your credits will release after check-in.', type: 'system' }).select().maybeSingle()
     }
     return NextResponse.json({ bond: updatedBond })
+  }
+
+  if (action === 'arrive') {
+    const { data: currentBond } = await admin.from('commitment_bonds').select('*').eq('match_id', matchId).maybeSingle()
+    if (!currentBond) return NextResponse.json({ error: 'no bond' }, { status: 404 })
+    const role: UserRole = currentBond.user_a_id === userId ? 'a' : 'b'
+    const arrivedField = 'arrived_' + role
+    const arrivedAtField = 'arrived_' + role + '_at'
+    const { data: updated } = await admin.from('commitment_bonds')
+      .update({ [arrivedField]: true, [arrivedAtField]: new Date().toISOString() })
+      .eq('id', currentBond.id).select().single()
+    return NextResponse.json({ bond: updated })
   }
 
   if (action === 'checkin') {

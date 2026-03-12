@@ -184,7 +184,7 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
     let finalUpdate: any = { ...update };
     if (otherChoice === venueId) {
       const venue = plan.venue_options.find((v: any) => v.id === venueId);
-      finalUpdate = { ...update, final_venue: venue, status: 'venue_confirmed' };
+      finalUpdate = { ...update, final_venue: venue, venue_lat: venue?.lat ?? null, venue_lng: venue?.lng ?? null, status: 'venue_confirmed' };
       await supabase.from('messages').insert({
         match_id: matchId,
         sender_user_id: userId,

@@ -24,6 +24,10 @@ interface Bond {
   scheduled_at: string | null
   resolved_at: string | null
   resolution_type: ResolutionType | null
+  arrived_a: boolean
+  arrived_b: boolean
+  arrived_a_at: string | null
+  arrived_b_at: string | null
   created_at: string
 }
 
@@ -106,6 +110,11 @@ export default function CommitmentBond({ matchId, userId, planStatus, scheduledA
   const [checkinSubmitted, setCheckinSubmitted] = useState<CheckinValue | null>(null)
   const [venue, setVenue] = useState<string | null>(null)
   const [effectiveScheduledAt, setEffectiveScheduledAt] = useState<string | null>(null)
+  const [venueLat, setVenueLat] = useState<number | null>(null)
+  const [venueLng, setVenueLng] = useState<number | null>(null)
+  const [gpsError, setGpsError] = useState<string | null>(null)
+  const [gpsChecking, setGpsChecking] = useState(false)
+  const [arrived, setArrived] = useState(false)
 
   const apiBond = useCallback(async (body: Record<string, unknown>) => {
     const res = await fetch('/api/bond', {
@@ -124,6 +133,12 @@ export default function CommitmentBond({ matchId, userId, planStatus, scheduledA
     const fetchedScheduledAt: string | null = data.scheduledAt ?? scheduledAt ?? null
     setEffectiveScheduledAt(fetchedScheduledAt)
     if (data.venue) setVenue(data.venue)
+    if (data.venueLat) setVenueLat(data.venueLat)
+    if (data.venueLng) setVenueLng(data.venueLng)
+    if (fetchedBond?.arrived_a || fetchedBond?.arrived_b) {
+      const role = fetchedBond.user_a_id === userId ? 'a' : 'b'
+      if (fetchedBond['arrived_' + role as keyof typeof fetchedBond]) setArrived(true)
+    }
     setBond(fetchedBond)
     setCredits(fetchedCredits)
     if (fetchedBond) {
@@ -315,28 +330,86 @@ export default function CommitmentBond({ matchId, userId, planStatus, scheduledA
     )
   }
 
-  if (view === 'checkin_prompt') return (
-    <div style={container}>
-      <h3 style={{ margin: '0 0 8px', color: colors.textPrimary, fontSize: 17, fontWeight: 600 }}>Did the date happen?</h3>
-      <p style={{ color: colors.textMuted, fontSize: 13, margin: '0 0 20px' }}>Your check-in determines how credits are released.</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {([
-          { value: 'met' as CheckinValue, label: 'Yes, we met', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.08)' },
-          { value: 'no_show' as CheckinValue, label: "They didn't show", color: '#f87171', bg: 'rgba(248, 113, 113, 0.08)' },
-          { value: 'safety' as CheckinValue, label: 'Safety issue - cancel', color: gold, bg: 'rgba(201, 169, 110, 0.08)' },
-        ] as const).map(({ value, label, color, bg }) => (
-          <button key={value} onClick={() => handleCheckin(value)} disabled={busy}
-            style={{ background: bg, border: '1px solid ' + color + '44', borderRadius: 10, padding: '13px 18px', color, fontSize: 14, fontWeight: 500, cursor: busy ? 'not-allowed' : 'pointer', textAlign: 'left', fontFamily: 'Georgia, serif', opacity: busy ? 0.5 : 1, transition: 'all 0.15s' }}>
-            {label}
-          </button>
-        ))}
-        <button onClick={() => setView('both_locked')}
-          style={{ background: 'transparent', border: 'none', color: colors.textMuted, fontSize: 12, cursor: 'pointer', padding: '8px 0', textDecoration: 'underline' }}>
-          Not now
-        </button>
+  if (view === 'checkin_prompt') {
+    async function handleArrive() {
+      setGpsChecking(true)
+      setGpsError(null)
+      if (!navigator.geolocation) {
+        setGpsError('GPS not available on this device.')
+        setGpsChecking(false)
+        return
+      }
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords
+          let gpsValid = false
+          if (venueLat && venueLng) {
+            const R = 6371000
+            const dLat = (latitude - venueLat) * Math.PI / 180
+            const dLng = (longitude - venueLng) * Math.PI / 180
+            const a = Math.sin(dLat/2)**2 + Math.cos(venueLat*Math.PI/180)*Math.cos(latitude*Math.PI/180)*Math.sin(dLng/2)**2
+            const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+            gpsValid = dist <= 400
+          } else {
+            gpsValid = true // no coords stored, accept on faith
+          }
+          if (gpsValid) {
+            setArrived(true)
+            await apiBond({ action: 'arrive' })
+            setGpsChecking(false)
+          } else {
+            setGpsError("You don't appear to be at the venue yet. Get closer and try again.")
+            setGpsChecking(false)
+          }
+        },
+        (err) => {
+          setGpsError('Location access denied. Please enable GPS and try again.')
+          setGpsChecking(false)
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      )
+    }
+
+    return (
+      <div style={container}>
+        <h3 style={{ margin: '0 0 6px', color: colors.textPrimary, fontSize: 17, fontWeight: 600 }}>Time to check in</h3>
+        <p style={{ color: colors.textMuted, fontSize: 13, margin: '0 0 20px', lineHeight: 1.6 }}>
+          Tap the button when you arrive at the venue. BetterMate will verify your location.
+        </p>
+        {!arrived ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button onClick={handleArrive} disabled={gpsChecking}
+              style={{ background: gpsChecking ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #4ade80, #16a34a)', color: gpsChecking ? colors.textMuted : '#000', border: 'none', borderRadius: 12, padding: '15px 20px', fontSize: 15, fontWeight: 700, cursor: gpsChecking ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif', letterSpacing: 0.3 }}>
+              {gpsChecking ? 'Checking location...' : 'I arrived at the venue'}
+            </button>
+            {gpsError && <p style={{ color: '#f87171', fontSize: 12, margin: 0, lineHeight: 1.5 }}>{gpsError}</p>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+              {([
+                { value: 'no_show' as CheckinValue, label: "They didn't show up", color: '#f87171', bg: 'rgba(248,113,113,0.08)' },
+                { value: 'safety' as CheckinValue, label: 'Safety concern — cancel', color: gold, bg: 'rgba(201,169,110,0.08)' },
+              ] as const).map(({ value, label, color, bg }) => (
+                <button key={value} onClick={() => handleCheckin(value)} disabled={busy}
+                  style={{ background: bg, border: '1px solid ' + color + '44', borderRadius: 10, padding: '11px 16px', color, fontSize: 13, fontWeight: 500, cursor: busy ? 'not-allowed' : 'pointer', textAlign: 'left', fontFamily: 'Georgia, serif', opacity: busy ? 0.5 : 1 }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setView('both_locked')}
+              style={{ background: 'transparent', border: 'none', color: colors.textMuted, fontSize: 12, cursor: 'pointer', padding: '6px 0', textDecoration: 'underline' }}>
+              Not now
+            </button>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ color: '#4ade80', fontSize: 15, fontWeight: 600, margin: '0 0 8px' }}>Arrival confirmed.</p>
+            <p style={{ color: colors.textSecondary, fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+              BetterMate has logged your check-in. Enjoy your date.
+            </p>
+          </div>
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   if (view === 'waiting_other_checkin') return (
     <div style={{ ...container, textAlign: 'center' }}>

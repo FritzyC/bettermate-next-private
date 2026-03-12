@@ -25,6 +25,8 @@ Return ONLY a valid JSON array with exactly 3 objects. Each object:
   "address": "Real Street Address, City, NY",
   "type": "restaurant|cafe|park|bar|museum",
   "description": "One sentence why this works for a date",
+  "lat": 42.6526,
+  "lng": -73.7562,
   "fairness": { "bucket": "midpoint", "label": "Near midpoint", "explanation": "Easy for both to reach" }
 }
 
