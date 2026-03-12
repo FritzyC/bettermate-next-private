@@ -19,26 +19,6 @@ export default function InviteClientShell({ code }: { code: string }) {
   const [accepting, setAccepting] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Auto-accept if user is already authenticated
-    const supabase = getSupabase()
-    if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) handleAccept()
-      })
-    }
-  }, [code])
-
-  useEffect(() => {
-    fetch("/api/invites/preview?token=" + code)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.ok) setPreview(d);
-        else setLoadError(d.error ?? "Invalid invite");
-      })
-      .catch(() => setLoadError("Could not load invite"));
-  }, [code]);
-
   async function handleAccept() {
     setAccepting(true);
     setAcceptError(null);
@@ -51,105 +31,188 @@ export default function InviteClientShell({ code }: { code: string }) {
     }
     const res = await fetch("/api/invites/accept", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + session.access_token },
       body: JSON.stringify({ token: code }),
     });
     const json = await res.json();
     if (json.ok) {
-      router.replace("/matches/" + json.match_id);
+      const { data: fp } = await supabase.from("user_fingerprint").select("onboarding_complete").eq("id", session.user.id).maybeSingle();
+      if (!fp?.onboarding_complete) {
+        router.replace("/onboarding?next=/matches/" + json.match_id);
+      } else {
+        router.replace("/matches/" + json.match_id);
+      }
     } else {
       setAcceptError(json.error ?? "Failed to accept invite");
       setAccepting(false);
     }
   }
 
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) handleAccept();
+      });
+    }
+  }, [code]);
+
+  useEffect(() => {
+    fetch("/api/invites/preview?token=" + code)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok) setPreview(d);
+        else setLoadError(d.error ?? "Invalid invite");
+      })
+      .catch(() => setLoadError("Could not load invite"));
+  }, [code]);
+
   const gold = "#C9A96E";
-  const bg: React.CSSProperties = {
-    minHeight: "100vh",
-    background: "linear-gradient(160deg, #0a041a 0%, #10062a 50%, #0a041a 100%)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "40px 20px",
-    fontFamily: "Georgia, serif",
-  };
+  const wrap: React.CSSProperties = { minHeight: "100vh", background: "linear-gradient(160deg, #06020f 0%, #0e0520 40%, #06020f 100%)", fontFamily: "Georgia, serif", color: colors.textPrimary };
 
   if (loadError) return (
-    <div style={{ ...bg, textAlign: "center" }}>
-      <p style={{ color: "#f87171", fontSize: 16, marginBottom: 24 }}>{loadError}</p>
-      <a href="/" style={{ color: gold, fontSize: 14 }}>Go to BetterMate</a>
+    <div style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", padding: 40, textAlign: "center" }}>
+      <p style={{ color: "#f87171", fontSize: 15, marginBottom: 24 }}>{loadError}</p>
+      <a href="/" style={{ color: gold, fontSize: 13 }}>Go to BetterMate</a>
     </div>
   );
 
-  if (!preview) return (
-    <div style={{ ...bg, textAlign: "center", color: colors.textMuted, fontSize: 14 }}>
-      Loading invite...
+  if (!preview || accepting) return (
+    <div style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+      <div style={{ width: 48, height: 48, background: "linear-gradient(135deg, #7c3aed, #db2777)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, color: "#fff", fontWeight: 700 }}>B</div>
+      <p style={{ color: colors.textMuted, fontSize: 13 }}>{accepting ? "Accepting your invite..." : "Loading..."}</p>
     </div>
   );
 
   if (preview.status === "accepted") return (
-    <div style={{ ...bg, textAlign: "center" }}>
-      <h2 style={{ color: colors.textPrimary, fontSize: 22, margin: "0 0 12px" }}>This invite has already been used.</h2>
-      <p style={{ color: colors.textMuted, fontSize: 14, margin: "0 0 28px" }}>Each invite link can only be used once.</p>
+    <div style={{ ...wrap, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", padding: 40, textAlign: "center" }}>
+      <h2 style={{ color: colors.textPrimary, fontSize: 20, margin: "0 0 12px" }}>This invite has already been used.</h2>
+      <p style={{ color: colors.textMuted, fontSize: 14, margin: "0 0 28px" }}>Each invite link is single-use.</p>
       <a href="/" style={{ color: gold, fontSize: 14 }}>Go to BetterMate</a>
     </div>
   );
 
   return (
-    <div style={bg}>
-      {/* Logo / Brand */}
-      <div style={{ marginBottom: 40, textAlign: "center" }}>
-        <div style={{ width: 56, height: 56, background: "linear-gradient(135deg, #7c3aed, #db2777)", borderRadius: 16, margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>
-          B
-        </div>
-        <p style={{ color: colors.textMuted, fontSize: 13, margin: 0, letterSpacing: 2, textTransform: "uppercase" }}>BetterMate</p>
-      </div>
+    <div style={wrap}>
 
-      {/* Card */}
-      <div style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(219,39,119,0.08) 100%)", border: "1px solid rgba(124,58,237,0.3)", borderRadius: 20, padding: "36px 32px", maxWidth: 400, width: "100%", textAlign: "center" }}>
-        <p style={{ color: colors.textMuted, fontSize: 13, margin: "0 0 8px", letterSpacing: 1, textTransform: "uppercase" }}>
-          You have been invited by
-        </p>
-        <h1 style={{ color: gold, fontSize: 28, fontWeight: 700, margin: "0 0 20px", letterSpacing: 0.3 }}>
-          {preview.inviter_name}
+      {/* HERO */}
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "72px 28px 56px", textAlign: "center" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,169,110,0.1)", border: "1px solid rgba(201,169,110,0.25)", borderRadius: 20, padding: "6px 14px", marginBottom: 32 }}>
+          <span style={{ color: gold, fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase" }}>Private Invite from {preview.inviter_name}</span>
+        </div>
+
+        <h1 style={{ fontSize: "clamp(32px, 6vw, 52px)", fontWeight: 700, margin: "0 0 16px", lineHeight: 1.15, letterSpacing: "-0.5px", color: colors.textPrimary }}>
+          You were invited<br />for a reason.
         </h1>
 
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "16px 20px", marginBottom: 28, textAlign: "left" }}>
+        <p style={{ fontSize: 18, color: gold, margin: "0 0 20px", fontStyle: "italic", letterSpacing: 0.3 }}>
+          Where intention meets action.
+        </p>
+
+        <p style={{ fontSize: 15, color: colors.textSecondary, margin: "0 auto 40px", maxWidth: 500, lineHeight: 1.75 }}>
+          BetterMate is a values-first connection platform for people who want honesty, compatibility, and real follow-through. No fantasy. No empty validation. Just better-aligned people, clearer intentions, and connection built with dignity.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+          <button onClick={handleAccept} disabled={accepting}
+            style={{ background: "linear-gradient(135deg, #7c3aed, #db2777)", color: "#fff", border: "none", borderRadius: 14, padding: "17px 48px", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "Georgia, serif", letterSpacing: 0.5, boxShadow: "0 8px 32px rgba(124,58,237,0.35)" }}>
+            Accept Your Invite
+          </button>
+          {preview.expires_at && (
+            <p style={{ color: colors.textMuted, fontSize: 11, margin: 0 }}>
+              Invite expires {new Date(preview.expires_at).toLocaleDateString(undefined, { month: "long", day: "numeric" })} &middot; Single use
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(124,58,237,0.3), transparent)", margin: "0 40px" }} />
+
+      {/* WHY YOU WERE INVITED */}
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "60px 28px", textAlign: "center" }}>
+        <p style={{ color: gold, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 20px" }}>Why You Were Invited</p>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 20px", lineHeight: 1.3 }}>This is not a link anyone can find.</h2>
+        <p style={{ color: colors.textSecondary, fontSize: 15, lineHeight: 1.8, margin: 0 }}>
+          BetterMate is invite-only. Every person here arrived the same way you did — through someone who trusted them enough to extend a personal invitation. That trust is the foundation of everything we build here. You were not randomly targeted. You were vouched for.
+        </p>
+      </div>
+
+      <div style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(124,58,237,0.15), transparent)", margin: "0 40px" }} />
+
+      {/* WHAT MAKES BETTERMATE DIFFERENT */}
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "60px 28px", textAlign: "center" }}>
+        <p style={{ color: gold, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 20px" }}>What Makes BetterMate Different</p>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 16px", lineHeight: 1.3 }}>Most platforms compete for your attention.<br />BetterMate asks for your intention.</h2>
+        <p style={{ color: colors.textSecondary, fontSize: 15, lineHeight: 1.8, margin: "0 0 36px" }}>
+          While other apps optimize for swipes, streaks, and screen time, BetterMate is built around a different question: are you actually compatible — and will you both show up?
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
           {[
-            "Real compatibility scoring — not just swiping",
-            "Date Pledge Bond — both show up or lose credits",
-            "GPS check-in at the venue — no ghosting",
-            "Integrity Score — your reputation travels with you",
-          ].map((line) => (
-            <div key={line} style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
-              <span style={{ color: gold, fontSize: 13, marginTop: 1 }}>+</span>
-              <span style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 1.5 }}>{line}</span>
+            ["Values", "before vanity"],
+            ["Action", "before attention"],
+            ["Dignity", "before fantasy"],
+          ].map(([top, bottom]) => (
+            <div key={top} style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)", borderRadius: 12, padding: "18px 12px" }}>
+              <p style={{ color: gold, fontSize: 15, fontWeight: 700, margin: "0 0 4px" }}>{top}</p>
+              <p style={{ color: colors.textMuted, fontSize: 12, margin: 0 }}>{bottom}</p>
             </div>
           ))}
         </div>
-
-        {preview.expires_at && (
-          <p style={{ color: colors.textMuted, fontSize: 11, margin: "0 0 20px" }}>
-            Invite expires {new Date(preview.expires_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-          </p>
-        )}
-
-        <button
-          onClick={handleAccept}
-          disabled={accepting}
-          style={{ width: "100%", background: accepting ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #7c3aed, #db2777)", color: accepting ? colors.textMuted : "#fff", border: "none", borderRadius: 12, padding: "15px 24px", fontSize: 16, fontWeight: 700, cursor: accepting ? "not-allowed" : "pointer", fontFamily: "Georgia, serif", letterSpacing: 0.3, transition: "all 0.2s" }}>
-          {accepting ? "Accepting..." : "Accept Invite"}
-        </button>
-
-        {acceptError && (
-          <p style={{ color: "#f87171", fontSize: 13, marginTop: 14 }}>{acceptError}</p>
-        )}
       </div>
 
-      <p style={{ color: colors.textMuted, fontSize: 11, marginTop: 32, textAlign: "center", maxWidth: 320, lineHeight: 1.6 }}>
-        BetterMate is a relationships platform built on accountability. Campus-only. Invite required.
-      </p>
+      <div style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(124,58,237,0.15), transparent)", margin: "0 40px" }} />
+
+      {/* HOW IT WORKS */}
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "60px 28px", textAlign: "center" }}>
+        <p style={{ color: gold, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 20px" }}>How It Works</p>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 40px" }}>Three steps. No games.</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {[
+            ["01", "Build your profile.", "Answer questions that actually matter — your values, communication style, and goals. No surface-level bios."],
+            ["02", "Meet aligned people.", "BetterMate surfaces connections based on real compatibility, not just proximity or photos. Every match is intentional."],
+            ["03", "Move toward real plans.", "BetterMate is designed to get people off the app and into the world. Real dates. Real accountability. Real follow-through."],
+          ].map(([num, title, body]) => (
+            <div key={num} style={{ display: "flex", gap: 20, textAlign: "left", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "20px 24px" }}>
+              <span style={{ color: gold, fontSize: 13, fontWeight: 700, minWidth: 28, opacity: 0.7 }}>{num}</span>
+              <div>
+                <p style={{ color: colors.textPrimary, fontSize: 15, fontWeight: 600, margin: "0 0 6px" }}>{title}</p>
+                <p style={{ color: colors.textSecondary, fontSize: 13, margin: 0, lineHeight: 1.7 }}>{body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(124,58,237,0.15), transparent)", margin: "0 40px" }} />
+
+      {/* OUR STANDARD */}
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "60px 28px", textAlign: "center" }}>
+        <p style={{ color: gold, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 20px" }}>Our Standard</p>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 20px" }}>Connection earns its place here.</h2>
+        <p style={{ color: colors.textSecondary, fontSize: 15, lineHeight: 1.85, margin: "0 0 28px" }}>
+          We believe showing up matters. That honesty is more attractive than performance. That the effort you bring to connection reflects the integrity you bring to everything else.
+        </p>
+        <p style={{ color: colors.textSecondary, fontSize: 15, lineHeight: 1.85, margin: 0 }}>
+          BetterMate holds a standard — not to judge you, but to protect the experience for everyone who takes this seriously. If you commit, you follow through. This is the integrity of effort. And it changes everything.
+        </p>
+      </div>
+
+      {/* FINAL CTA */}
+      <div style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(219,39,119,0.08) 100%)", border: "1px solid rgba(124,58,237,0.2)", margin: "20px 28px 60px", borderRadius: 20, padding: "52px 28px", textAlign: "center", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 16px", lineHeight: 1.3 }}>You were invited into a<br />better culture of connection.</h2>
+        <p style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 1.8, margin: "0 auto 36px", maxWidth: 420 }}>
+          Not a better algorithm. Not a better filter. A better standard — built by people who believe that how you show up for connection is how you show up for life.
+        </p>
+        <button onClick={handleAccept} disabled={accepting}
+          style={{ background: "linear-gradient(135deg, #7c3aed, #db2777)", color: "#fff", border: "none", borderRadius: 14, padding: "17px 48px", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "Georgia, serif", letterSpacing: 0.5, marginBottom: 16, boxShadow: "0 8px 32px rgba(124,58,237,0.35)" }}>
+          Accept Your Invite
+        </button>
+        <p style={{ color: colors.textMuted, fontSize: 11, margin: 0 }}>
+          Invite-only &middot; Single use &middot; Your entry was earned.
+        </p>
+        {acceptError && <p style={{ color: "#f87171", fontSize: 13, marginTop: 16 }}>{acceptError}</p>}
+      </div>
+
     </div>
   );
 }
