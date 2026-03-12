@@ -349,7 +349,23 @@ export default function CommitmentBond({ matchId, userId, planStatus, scheduledA
             const dLng = (longitude - venueLng) * Math.PI / 180
             const a = Math.sin(dLat/2)**2 + Math.cos(venueLat*Math.PI/180)*Math.cos(latitude*Math.PI/180)*Math.sin(dLng/2)**2
             const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-            gpsValid = dist <= 400
+            gpsValid = dist <= 100
+            if (gpsValid) {
+              // Must check in within 30 min before or 2 hours after scheduled time
+              const scheduled = effectiveScheduledAt ? new Date(effectiveScheduledAt).getTime() : null
+              if (scheduled) {
+                const now = Date.now()
+                const thirtyMinBefore = scheduled - 30 * 60 * 1000
+                const twoHoursAfter = scheduled + 2 * 60 * 60 * 1000
+                if (now < thirtyMinBefore) {
+                  gpsValid = false
+                  setGpsError('Check-in opens 30 minutes before your scheduled date time.')
+                } else if (now > twoHoursAfter) {
+                  gpsValid = false
+                  setGpsError('Check-in window has closed. The date was over 2 hours ago.')
+                }
+              }
+            }
           } else {
             gpsValid = true // no coords stored, accept on faith
           }
