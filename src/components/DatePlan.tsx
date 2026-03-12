@@ -52,9 +52,7 @@ export default function DatePlan({ matchId, userId, inline = false }: { matchId:
     async function checkBond() {
       const { data: { session } } = await sb!.auth.getSession()
       if (!session) return
-      const res = await fetch('/api/bond?matchId=' + matchId, {
-        headers: { Authorization: 'Bearer ' + session.access_token }
-      })
+      const res = await fetch('/api/bond?matchId=' + matchId + '&userId=' + session.user.id)
       const d = await res.json()
       if (d.bond?.status === 'active') setBondActive(true)
     }
