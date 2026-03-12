@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabase.rpc("accept_invite", {
+    const admin = await getSupabaseAdmin();
+    const { data, error } = await admin.rpc("accept_invite", {
       p_token: token,
       p_user_id: user.id,
     });
@@ -43,7 +44,6 @@ export async function POST(req: NextRequest) {
 
     if (data?.ok === true) {
       // Grant new user 2 invite credits
-      const admin = await getSupabaseAdmin();
       await admin.from('user_fingerprint')
         .update({ invite_credits: 2 })
         .eq('id', user.id);
