@@ -119,13 +119,14 @@ export default function CommitmentBond({ matchId, userId, planStatus, scheduledA
     const data = await res.json()
     const fetchedBond: Bond | null = data.bond ?? null
     const fetchedCredits: Credits = data.credits ?? { balance: 0, locked_balance: 0 }
+    const fetchedScheduledAt: string | null = data.scheduledAt ?? scheduledAt ?? null
     setBond(fetchedBond)
     setCredits(fetchedCredits)
     if (fetchedBond) {
       setMyRole(fetchedBond.user_a_id === userId ? 'a' : 'b')
       if (fetchedBond.resolution_type) setResolution(fetchedBond.resolution_type)
     }
-    const nextView = determineView(fetchedBond, fetchedCredits, planStatus, scheduledAt, userId)
+    const nextView = determineView(fetchedBond, fetchedCredits, planStatus, fetchedScheduledAt, userId)
     setView(nextView)
     if (nextView === 'pledge_form') trackEvent('pledge.shown', { matchId })
     if (nextView === 'checkin_prompt') trackEvent('bond.checkin_prompt_shown', { matchId })

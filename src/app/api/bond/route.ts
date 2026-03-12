@@ -42,7 +42,9 @@ export async function GET(req: NextRequest) {
   if (!matchId || !userId) return NextResponse.json({ error: 'missing params' }, { status: 400 })
   const { data: bond } = await admin.from('commitment_bonds').select('*').eq('match_id', matchId).maybeSingle()
   const { data: credits } = await admin.from('user_credits').select('balance, locked_balance').eq('user_id', userId).maybeSingle()
-  return NextResponse.json({ bond: bond ?? null, credits: credits ?? { balance: 0, locked_balance: 0 } })
+  const { data: plan } = await admin.from('date_plans').select('final_time, status').eq('match_id', matchId).maybeSingle()
+  const scheduledAt = bond?.scheduled_at ?? plan?.final_time ?? null
+  return NextResponse.json({ bond: bond ?? null, credits: credits ?? { balance: 0, locked_balance: 0 }, scheduledAt })
 }
 
 export async function POST(req: NextRequest) {
