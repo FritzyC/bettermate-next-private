@@ -85,50 +85,79 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 function Welcome({ onNext }: { onNext:()=>void }) {
+  const gold = '#C9A96E';
   return (
     <Shell>
       <div style={{ textAlign:'center', marginBottom:40 }}>
-        <div style={{ fontSize:44, marginBottom:20, color:'#7c3aed' }}>◈</div>
-        <h1 style={S.h1}>BetterMate helps people<br />actually meet.</h1>
-        <p style={S.body}>Most apps optimize swiping.<br />BetterMate optimizes real-world connection.</p>
-        <div style={S.card}>
-          {[['◈','Meet people who share your values'],['◉','Make plans, not endless chats'],['◐','Show up — integrity matters here']].map(([icon,text]) => (
-            <div key={text} style={{ display:'flex', alignItems:'center', gap:14, marginBottom:14, fontFamily:'system-ui,sans-serif', fontSize:14, color:'#b09fd0' }}>
-              <span style={{ color:'#7c3aed', fontSize:16, flexShrink:0 }}>{icon}</span>{text}
+        <div style={{ width:56, height:56, background:'linear-gradient(135deg,#7c3aed,#db2777)', borderRadius:16, margin:'0 auto 20px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, color:'#fff', fontWeight:700, fontFamily:"'Georgia',serif" }}>B</div>
+        <p style={{ fontFamily:'system-ui,sans-serif', fontSize:11, color:gold, letterSpacing:2, textTransform:'uppercase', margin:'0 0 20px' }}>Welcome to BetterMate</p>
+        <h1 style={{ ...S.h1, fontSize:'clamp(24px,5vw,32px)', lineHeight:1.2, margin:'0 0 16px' }}>Not just who catches your eye —<br />who fits your life.</h1>
+        <p style={{ ...S.body, margin:'0 0 32px', lineHeight:1.8 }}>
+          This is not a swipe app. BetterMate builds anticipation through honesty and alignment — not visual pressure. You were invited here because someone believed you take connection seriously.
+        </p>
+        <div style={{ ...S.card, textAlign:'left' }}>
+          {[
+            ['Values before vanity', 'Your answers shape who you meet — not your photos alone.'],
+            ['Action before attention', 'BetterMate is built to move people toward real plans.'],
+            ['Connection earns its place', 'Every match here is intentional. Every introduction is earned.'],
+          ].map(([title, sub]) => (
+            <div key={title} style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:16 }}>
+              <span style={{ color:gold, fontSize:16, flexShrink:0, marginTop:2 }}>+</span>
+              <div>
+                <p style={{ fontFamily:"'Georgia',serif", fontSize:14, color:'#c4b5fd', margin:'0 0 3px', fontWeight:600 }}>{title}</p>
+                <p style={{ fontFamily:'system-ui,sans-serif', fontSize:12, color:'#7a6a9a', margin:0, lineHeight:1.5 }}>{sub}</p>
+              </div>
             </div>
           ))}
-          <div style={{ display:'flex', alignItems:'center', gap:14, fontFamily:'system-ui,sans-serif', fontSize:14, color:'#b09fd0' }}>
-            <span style={{ color:'#7c3aed', fontSize:16, flexShrink:0 }}>◐</span>Your profile powers everything — matching, venues, insights
-          </div>
         </div>
       </div>
-      <Btn onClick={onNext}>Start your profile →</Btn>
+      <p style={{ fontFamily:'system-ui,sans-serif', fontSize:11, color:'#3a2a55', textAlign:'center', marginBottom:16, letterSpacing:0.5 }}>
+        Where intention meets action.
+      </p>
+      <Btn onClick={onNext}>I'm ready to begin →</Btn>
     </Shell>
   );
 }
 
 function Compact({ onNext }: { onNext:()=>void }) {
   const [agreed, setAgreed] = useState(false);
+  const gold = '#C9A96E';
+  const standards = [
+    ['Be honest about who you are', 'Your profile should reflect your actual values, pace, and intentions — not a performance.'],
+    ['Respect people\'s time and effort', 'Connection requires presence. Treat every interaction as something worth showing up for.'],
+    ['If you commit, follow through', 'BetterMate holds a standard of integrity of effort. Plans you make here are meant to happen.'],
+    ['Connection earns its place here', 'This is not a platform for endless browsing. It is built for people who are ready to move toward something real.'],
+  ];
   return (
     <Shell>
-      <p style={S.eyebrow}>The BetterMate Compact</p>
-      <h1 style={S.h1}>This community works because people show up.</h1>
-      <p style={S.body}>Before joining, three things matter here:</p>
-      <div style={{ marginBottom:32 }}>
-        {['Be honest about who you are',"Respect people's time",'If you make a plan, do your best to keep it'].map((p,i) => (
-          <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:16, padding:'18px 0', borderBottom: i < 2 ? '1px solid #12092a' : 'none' }}>
-            <span style={{ width:28, height:28, borderRadius:'50%', background:'rgba(124,58,237,0.1)', border:'1px solid rgba(124,58,237,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:'#a78bfa', flexShrink:0, fontFamily:'system-ui,sans-serif' }}>{i+1}</span>
-            <span style={{ fontFamily:"'Georgia',serif", fontSize:16, color:'#c4b5fd', lineHeight:1.5 }}>{p}</span>
+      <p style={{ ...S.eyebrow, color:gold }}>The BetterMate Standard</p>
+      <h1 style={{ ...S.h1, lineHeight:1.2, margin:'0 0 12px' }}>You are not here to be seen first.<br />You are here to be understood first.</h1>
+      <p style={{ ...S.body, marginBottom:28, lineHeight:1.8 }}>
+        BetterMate holds a standard — not to judge you, but to protect the experience for everyone who takes this seriously. Before we begin, here is what this platform is built on.
+      </p>
+      <div style={{ marginBottom:28 }}>
+        {standards.map(([title, sub], i) => (
+          <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:16, padding:'16px 0', borderBottom: i < standards.length - 1 ? '1px solid #12092a' : 'none' }}>
+            <span style={{ width:28, height:28, borderRadius:'50%', background:'rgba(201,169,110,0.1)', border:'1px solid rgba(201,169,110,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:gold, flexShrink:0, fontFamily:'system-ui,sans-serif', marginTop:2 }}>{i+1}</span>
+            <div>
+              <p style={{ fontFamily:"'Georgia',serif", fontSize:15, color:'#c4b5fd', margin:'0 0 4px', fontWeight:600, lineHeight:1.4 }}>{title}</p>
+              <p style={{ fontFamily:'system-ui,sans-serif', fontSize:12, color:'#7a6a9a', margin:0, lineHeight:1.6 }}>{sub}</p>
+            </div>
           </div>
         ))}
       </div>
-      <button onClick={() => setAgreed(!agreed)} style={{ display:'flex', alignItems:'center', gap:14, background:'transparent', border:'none', cursor:'pointer', marginBottom:32, padding:0 }}>
+      <button onClick={() => setAgreed(!agreed)} style={{ display:'flex', alignItems:'center', gap:14, background:'transparent', border:'none', cursor:'pointer', marginBottom:8, padding:0, width:'100%' }}>
         <div style={{ width:24, height:24, borderRadius:6, border:`2px solid ${agreed ? '#7c3aed' : '#6d4fa0'}`, background: agreed ? '#7c3aed' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s ease', flexShrink:0 }}>
           {agreed && <span style={{ color:'#fff', fontSize:14 }}>✓</span>}
         </div>
-        <span style={{ fontFamily:'system-ui,sans-serif', fontSize:15, color: agreed ? '#c4b5fd' : '#9d84d0', transition:'color 0.2s ease' }}>I'm in.</span>
+        <span style={{ fontFamily:"'Georgia',serif", fontSize:15, color: agreed ? '#c4b5fd' : '#9d84d0', transition:'color 0.2s ease', textAlign:'left', lineHeight:1.5 }}>
+          I agree to this standard. I am here for real connection.
+        </span>
       </button>
-      <Btn onClick={onNext} disabled={!agreed}>Continue →</Btn>
+      <p style={{ fontFamily:'system-ui,sans-serif', fontSize:11, color:'#3a2a55', marginBottom:24, paddingLeft:38 }}>
+        Built for people who follow through.
+      </p>
+      <Btn onClick={onNext} disabled={!agreed}>I agree to this standard →</Btn>
     </Shell>
   );
 }

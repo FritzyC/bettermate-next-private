@@ -102,15 +102,15 @@ export default function InviteClientShell({ code }: { code: string }) {
         </div>
 
         <h1 style={{ fontSize: "clamp(32px, 6vw, 52px)", fontWeight: 700, margin: "0 0 16px", lineHeight: 1.15, letterSpacing: "-0.5px", color: colors.textPrimary }}>
-          You were invited<br />for a reason.
+          Not just who catches your eye —<br />who fits your life.
         </h1>
 
         <p style={{ fontSize: 18, color: gold, margin: "0 0 20px", fontStyle: "italic", letterSpacing: 0.3 }}>
-          Where intention meets action.
+          You were invited for a reason. Where intention meets action.
         </p>
 
         <p style={{ fontSize: 15, color: colors.textSecondary, margin: "0 auto 40px", maxWidth: 500, lineHeight: 1.75 }}>
-          BetterMate is a values-first connection platform for people who want honesty, compatibility, and real follow-through. No fantasy. No empty validation. Just better-aligned people, clearer intentions, and connection built with dignity.
+          BetterMate builds anticipation through honesty and alignment — not visual pressure. This is not a swipe app. It is a values-first platform for people who want real compatibility, honest alignment, and the dignity of follow-through. No fantasy. No endless browsing. Just connection built on something true.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
@@ -133,7 +133,7 @@ export default function InviteClientShell({ code }: { code: string }) {
         <p style={{ color: gold, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 20px" }}>Why You Were Invited</p>
         <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 20px", lineHeight: 1.3 }}>This is not a link anyone can find.</h2>
         <p style={{ color: colors.textSecondary, fontSize: 15, lineHeight: 1.8, margin: 0 }}>
-          BetterMate is invite-only. Every person here arrived the same way you did — through someone who trusted them enough to extend a personal invitation. That trust is the foundation of everything we build here. You were not randomly targeted. You were vouched for.
+          BetterMate is invite-only. Every person here arrived the same way you did — through someone who trusted them enough to extend a personal invitation. That trust is the foundation of everything built here. You were not randomly targeted. You were vouched for. Entry is not earned by how you look. It is earned by who you are and how seriously you take connection.
         </p>
       </div>
 
@@ -144,7 +144,7 @@ export default function InviteClientShell({ code }: { code: string }) {
         <p style={{ color: gold, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 20px" }}>What Makes BetterMate Different</p>
         <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 16px", lineHeight: 1.3 }}>Most platforms compete for your attention.<br />BetterMate asks for your intention.</h2>
         <p style={{ color: colors.textSecondary, fontSize: 15, lineHeight: 1.8, margin: "0 0 36px" }}>
-          While other apps optimize for swipes, streaks, and screen time, BetterMate is built around a different question: are you actually compatible — and will you both show up?
+          While other apps optimize for swipes, streaks, and screen time, BetterMate is organized around a different question: are you actually compatible — and will you both show up? The excitement here is not visual. It is the deeper, more durable anticipation of discovering that someone's values, energy, pace, and direction genuinely align with yours. That feeling is rarer than attraction. And it lasts longer.
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
           {[
@@ -168,8 +168,8 @@ export default function InviteClientShell({ code }: { code: string }) {
         <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 40px" }}>Three steps. No games.</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {[
-            ["01", "Build your profile.", "Answer questions that actually matter — your values, communication style, and goals. No surface-level bios."],
-            ["02", "Meet aligned people.", "BetterMate surfaces connections based on real compatibility, not just proximity or photos. Every match is intentional."],
+            ["01", "Build your real profile.", "Answer questions that actually matter — your values, communication style, goals, and pace. No surface-level bios. The more honest you are, the better this works."],
+            ["02", "Meet aligned people.", "BetterMate surfaces connections based on genuine compatibility — not proximity or photos alone. Every match is intentional. Every introduction is earned."],
             ["03", "Move toward real plans.", "BetterMate is designed to get people off the app and into the world. Real dates. Real accountability. Real follow-through."],
           ].map(([num, title, body]) => (
             <div key={num} style={{ display: "flex", gap: 20, textAlign: "left", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "20px 24px" }}>
@@ -199,16 +199,16 @@ export default function InviteClientShell({ code }: { code: string }) {
 
       {/* FINAL CTA */}
       <div style={{ background: "linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(219,39,119,0.08) 100%)", border: "1px solid rgba(124,58,237,0.2)", margin: "20px 28px 60px", borderRadius: 20, padding: "52px 28px", textAlign: "center", maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
-        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 16px", lineHeight: 1.3 }}>You were invited into a<br />better culture of connection.</h2>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 16px", lineHeight: 1.3 }}>You were invited into<br />a better standard.</h2>
         <p style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 1.8, margin: "0 auto 36px", maxWidth: 420 }}>
-          Not a better algorithm. Not a better filter. A better standard — built by people who believe that how you show up for connection is how you show up for life.
+          Not a better algorithm. Not a better filter. A better standard — built by people who believe that how you show up for connection is how you show up for life. Accept your invite. Meet someone who fits your life, not just someone who catches your eye.
         </p>
         <button onClick={handleAccept} disabled={accepting}
           style={{ background: "linear-gradient(135deg, #7c3aed, #db2777)", color: "#fff", border: "none", borderRadius: 14, padding: "17px 48px", fontSize: 16, fontWeight: 700, cursor: "pointer", fontFamily: "Georgia, serif", letterSpacing: 0.5, marginBottom: 16, boxShadow: "0 8px 32px rgba(124,58,237,0.35)" }}>
           Accept Your Invite
         </button>
         <p style={{ color: colors.textMuted, fontSize: 11, margin: 0 }}>
-          Invite-only &middot; Single use &middot; Your entry was earned.
+          Invite-only &middot; Single use &middot; Your entry was earned &middot; Connection earns its place.
         </p>
         {acceptError && <p style={{ color: "#f87171", fontSize: 13, marginTop: 16 }}>{acceptError}</p>}
       </div>
