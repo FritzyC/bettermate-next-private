@@ -11,12 +11,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No API key', venues: [] })
   }
 
-  const prompt = `You are a local venue expert for the Capital Region of New York State (Albany, Troy, Saratoga, Schenectady area).
+  const prompt = `You are a local venue expert with deep knowledge of cities across the United States including New York City, Atlanta, Albany, Los Angeles, Chicago, Miami, Houston, Washington DC, Boston, Philadelphia, and all major US metros.
 
-Suggest 3 real, specific date venues near or between "${locationA}" and "${locationB}" for two people traveling by ${travelMode || 'car'}.
+Suggest 3 real, specific date venues near or between "${locationA}" and "${locationB}" for two people traveling by ${travelMode || 'car'}. Use your knowledge of the actual city or region these locations are in.
 ${tags?.length ? `They enjoy: ${tags.join(', ')}` : 'Suggest a mix of restaurant, cafe, and outdoor options.'}
 
-Use ONLY real venues that actually exist in the Capital Region NY. Include the actual street address.
+Use ONLY real venues that actually exist in the relevant city or region. Include the actual street address. Match the city/neighborhood of the provided locations.
 
 Return ONLY a valid JSON array with exactly 3 objects. Each object:
 {

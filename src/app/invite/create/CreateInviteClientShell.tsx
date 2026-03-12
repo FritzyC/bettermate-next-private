@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useOnboardingGuard } from '@/hooks/useOnboardingGuard'
 import { getSupabase } from '@/lib/supabaseClient'
 import { colors } from '@/lib/bm/tokens'
@@ -8,9 +8,20 @@ import { colors } from '@/lib/bm/tokens'
 export default function CreateInviteClientShell() {
   useOnboardingGuard()
   const [loading, setLoading] = useState(false)
+  const [credits, setCredits] = useState<number | null>(null)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    const sb = getSupabase()
+    if (!sb) return
+    sb.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return
+      const { data } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
+      setCredits(data?.invite_credits ?? 0)
+    })
+  }, [])
 
   async function onCreateInvite() {
     setLoading(true)
@@ -70,7 +81,14 @@ export default function CreateInviteClientShell() {
 
         {!inviteUrl ? (
           <>
-            <h1 style={{ margin: '0 0 10px', color: colors.textPrimary, fontSize: 22, fontWeight: 700, letterSpacing: 0.3 }}>Invite someone you trust</h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <h1 style={{ margin: 0, color: colors.textPrimary, fontSize: 22, fontWeight: 700, letterSpacing: 0.3 }}>Invite someone you trust</h1>
+              {credits !== null && (
+                <span style={{ background: credits > 0 ? 'rgba(201,169,110,0.12)' : 'rgba(248,113,113,0.1)', border: '1px solid ' + (credits > 0 ? 'rgba(201,169,110,0.3)' : 'rgba(248,113,113,0.3)'), borderRadius: 8, padding: '4px 10px', fontSize: 11, color: credits > 0 ? '#C9A96E' : '#f87171', fontFamily: 'Georgia, serif' }}>
+                  {credits} invite{credits !== 1 ? 's' : ''} remaining
+                </span>
+              )}
+            </div>
             <p style={{ color: colors.textSecondary, fontSize: 14, margin: '0 0 28px', lineHeight: 1.6 }}>
               BetterMate is invite-only. Your invite link is valid for 7 days and can be used once.
             </p>
@@ -92,9 +110,9 @@ export default function CreateInviteClientShell() {
 
             {error && <p style={{ color: '#f87171', fontSize: 13, margin: '0 0 16px' }}>{error}</p>}
 
-            <button onClick={onCreateInvite} disabled={loading}
+            <button onClick={onCreateInvite} disabled={loading || credits === 0}
               style={{ width: '100%', background: loading ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #7c3aed, #db2777)', color: loading ? colors.textMuted : '#fff', border: 'none', borderRadius: 12, padding: '15px 24px', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif', letterSpacing: 0.3, transition: 'all 0.2s' }}>
-              {loading ? 'Generating link...' : 'Generate Invite Link'}
+              {loading ? 'Generating link...' : credits === 0 ? 'No invites remaining' : 'Generate Invite Link'}
             </button>
           </>
         ) : (

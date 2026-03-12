@@ -42,6 +42,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (data?.ok === true) {
+      // Grant new user 2 invite credits
+      const admin = await getSupabaseAdmin();
+      await admin.from('user_fingerprint')
+        .update({ invite_credits: 2 })
+        .eq('id', user.id);
       return NextResponse.json({ ok: true, match_id: data.match_id, idempotent: !!data.idempotent });
     }
 

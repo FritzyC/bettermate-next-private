@@ -50,6 +50,16 @@ export async function POST(req: NextRequest) {
     return json({ error: 'unauthorized', detail: debug ? uErr?.message : null }, 401);
   }
 
+  // Check invite credits
+  const adminClient = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  })
+  const { data: fp } = await adminClient.from('user_fingerprint').select('invite_credits').eq('id', user.id).maybeSingle()
+  const credits = fp?.invite_credits ?? 0
+  if (credits <= 0) {
+    return json({ error: 'no_invite_credits', detail: 'You have no invite credits remaining.' }, 403)
+  }
+
   // Create token server-side
   const token = crypto.randomBytes(32).toString('hex'); // 64 hex chars
 
@@ -78,6 +88,9 @@ export async function POST(req: NextRequest) {
     'http://localhost:3000';
 
   const invite_url = `${siteUrl.replace(/\/+$/, '')}/invite/${inviteRow.token}`;
+
+  // Deduct invite credit
+  await adminClient.from('user_fingerprint').update({ invite_credits: credits - 1 }).eq('id', user.id);
 
   // Best-effort behavior log
   try {
