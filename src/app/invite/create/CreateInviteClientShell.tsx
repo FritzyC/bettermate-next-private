@@ -14,10 +14,17 @@ export default function CreateInviteClientShell() {
   const [copied, setCopied] = useState(false)
 
   async function fetchCredits() {
-    const sb = getSupabase()
+    let sb = getSupabase()
     if (!sb) return
-    const { data: { session } } = await sb.auth.getSession()
-    if (!session) return
+    let { data: { session } } = await sb.auth.getSession()
+    if (!session) {
+      await new Promise(r => setTimeout(r, 800))
+      sb = getSupabase()
+      if (!sb) { setCredits(0); return }
+      const res = await sb.auth.getSession()
+      session = res.data.session
+    }
+    if (!session) { setCredits(0); return }
     const { data } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
     setCredits(data?.invite_credits ?? 0)
   }
