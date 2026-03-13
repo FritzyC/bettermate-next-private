@@ -13,26 +13,32 @@ export default function CreateInviteClientShell() {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  async function fetchCredits() {
-    let sb = getSupabase()
+  async function loadCredits(userId: string) {
+    const sb = getSupabase()
     if (!sb) return
-    let { data: { session } } = await sb.auth.getSession()
-    if (!session) {
-      await new Promise(r => setTimeout(r, 800))
-      sb = getSupabase()
-      if (!sb) { setCredits(0); return }
-      const res = await sb.auth.getSession()
-      session = res.data.session
-    }
-    if (!session) { setCredits(0); return }
-    const { data } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
+    const { data } = await sb
+      .from('user_fingerprint')
+      .select('invite_credits')
+      .eq('id', userId)
+      .maybeSingle()
     setCredits(data?.invite_credits ?? 0)
   }
 
   useEffect(() => {
-    fetchCredits()
-    window.addEventListener('focus', fetchCredits)
-    return () => window.removeEventListener('focus', fetchCredits)
+    const sb = getSupabase()
+    if (!sb) return
+
+    // Load immediately if session already exists
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) loadCredits(session.user.id)
+    })
+
+    // Also listen for auth state changes (handles delayed session restore)
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.id) loadCredits(session.user.id)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   async function onCreateInvite() {
@@ -52,7 +58,7 @@ export default function CreateInviteClientShell() {
         return
       }
       setInviteUrl(data.invite_url ?? null)
-      setCredits(c => (c !== null ? c - 1 : c))
+      setCredits(c => (c !== null ? Math.max(0, c - 1) : c))
     } catch (e: unknown) {
       setError((e as { message?: string })?.message ?? 'network_error')
     } finally {
@@ -121,10 +127,13 @@ export default function CreateInviteClientShell() {
                 </div>
               ))}
             </div>
+            {credits === null && (
+              <p style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', marginBottom: 16 }}>Loading your invites...</p>
+            )}
             {error && <p style={{ color: '#f87171', fontSize: 13, margin: '0 0 16px' }}>{error}</p>}
-            <button onClick={onCreateInvite} disabled={loading || credits === 0}
-              style={{ width: '100%', background: (loading || credits === 0) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #7c3aed, #db2777)', color: (loading || credits === 0) ? colors.textMuted : '#fff', border: 'none', borderRadius: 12, padding: '15px 24px', fontSize: 15, fontWeight: 700, cursor: (loading || credits === 0) ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif', letterSpacing: 0.3, transition: 'all 0.2s' }}>
-              {loading ? 'Generating link...' : credits === 0 ? 'No invites remaining' : 'Generate Invite Link'}
+            <button onClick={onCreateInvite} disabled={loading || credits === 0 || credits === null}
+              style={{ width: '100%', background: (loading || credits === 0 || credits === null) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #7c3aed, #db2777)', color: (loading || credits === 0 || credits === null) ? colors.textMuted : '#fff', border: 'none', borderRadius: 12, padding: '15px 24px', fontSize: 15, fontWeight: 700, cursor: (loading || credits === 0 || credits === null) ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif', letterSpacing: 0.3, transition: 'all 0.2s' }}>
+              {loading ? 'Generating link...' : credits === null ? 'Loading...' : credits === 0 ? 'No invites remaining' : 'Generate Invite Link'}
             </button>
           </>
         ) : (
