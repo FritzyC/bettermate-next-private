@@ -13,14 +13,19 @@ export default function CreateInviteClientShell() {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
+  async function fetchCredits() {
     const sb = getSupabase()
     if (!sb) return
-    sb.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return
-      const { data } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
-      setCredits(data?.invite_credits ?? 0)
-    })
+    const { data: { session } } = await sb.auth.getSession()
+    if (!session) return
+    const { data } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
+    setCredits(data?.invite_credits ?? 0)
+  }
+
+  useEffect(() => {
+    fetchCredits()
+    window.addEventListener('focus', fetchCredits)
+    return () => window.removeEventListener('focus', fetchCredits)
   }, [])
 
   async function onCreateInvite() {
