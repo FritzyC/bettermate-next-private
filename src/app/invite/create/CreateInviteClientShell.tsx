@@ -80,6 +80,10 @@ export default function CreateInviteClientShell() {
       <div style={{ marginBottom: 36, textAlign: 'center' }}>
         <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg, #7c3aed, #db2777)', borderRadius: 16, margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, color: '#fff', fontWeight: 700 }}>B</div>
         <p style={{ color: colors.textMuted, fontSize: 12, margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>BetterMate</p>
+        <button onClick={async () => { const sb = getSupabase(); if (sb) await sb.auth.signOut(); window.location.href = '/auth'; }}
+          style={{ marginTop: 8, background: 'transparent', border: 'none', color: colors.textMuted, fontSize: 11, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Georgia, serif' }}>
+          Sign out
+        </button>
       </div>
 
       <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(219,39,119,0.07) 100%)', border: '1px solid rgba(124,58,237,0.28)', borderRadius: 20, padding: '36px 32px', maxWidth: 420, width: '100%' }}>
