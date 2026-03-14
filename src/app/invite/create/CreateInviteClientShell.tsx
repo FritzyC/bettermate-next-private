@@ -18,20 +18,9 @@ export default function CreateInviteClientShell() {
     async function load() {
       const sb = getSupabase()
       if (!sb) return
-      // getUser() makes a real network call — not localStorage dependent
-      const { data: { user } } = await sb.auth.getUser()
-      if (!user || cancelled) {
-        // fallback: try getSession once more after delay
-        await new Promise(r => setTimeout(r, 1500))
-        const { data: { session } } = await sb.auth.getSession()
-        if (!session || cancelled) { if (!cancelled) setCredits(0); return }
-        const r2 = await fetch('/api/invites/credits', { headers: { 'Authorization': 'Bearer ' + session.access_token } })
-        const j2 = await r2.json().catch(() => ({}))
-        if (!cancelled) setCredits(j2.credits ?? 0)
-        return
-      }
+      await new Promise(r => setTimeout(r, 300))
       const { data: { session } } = await sb.auth.getSession()
-      if (!session || cancelled) { if (!cancelled) setCredits(0); return }
+      if (!session || cancelled) return
       const res = await fetch('/api/invites/credits', {
         headers: { 'Authorization': 'Bearer ' + session.access_token }
       })
@@ -67,7 +56,16 @@ export default function CreateInviteClientShell() {
         return
       }
       setInviteUrl(data.invite_url ?? null)
-      setCredits(c => (c !== null ? Math.max(0, c - 1) : c))
+      // Refresh credits from API after successful generation
+      const sb2 = getSupabase()
+      if (sb2) {
+        const { data: { session: s2 } } = await sb2.auth.getSession()
+        if (s2) {
+          const cr = await fetch('/api/invites/credits', { headers: { 'Authorization': 'Bearer ' + s2.access_token } })
+          const cj = await cr.json().catch(() => ({}))
+          setCredits(cj.credits ?? 0)
+        }
+      }
     } catch (e: unknown) {
       setError((e as { message?: string })?.message ?? 'network_error')
     } finally {
