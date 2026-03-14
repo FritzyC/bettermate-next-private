@@ -13,48 +13,49 @@ export default function CreateInviteClientShell() {
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  async function loadCredits(userId: string) {
-    const sb = getSupabase()
-    if (!sb) return
-    const { data } = await sb
-      .from('user_fingerprint')
-      .select('invite_credits')
-      .eq('id', userId)
-      .maybeSingle()
-    setCredits(data?.invite_credits ?? 0)
-  }
-
   useEffect(() => {
-    const sb = getSupabase()
-    if (!sb) return
-
-    // Load immediately if session already exists
-    sb.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.id) loadCredits(session.user.id)
-    })
-
-    // Also listen for auth state changes (handles delayed session restore)
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
-      if (session?.user?.id) loadCredits(session.user.id)
-    })
-
-    return () => subscription.unsubscribe()
+    let cancelled = false
+    async function load() {
+      const sb = getSupabase()
+      if (!sb) return
+      let session = (await sb.auth.getSession()).data.session
+      if (!session) {
+        await new Promise(r => setTimeout(r, 1200))
+        session = (await sb.auth.getSession()).data.session
+      }
+      if (!session || cancelled) return
+      const res = await fetch('/api/invites/credits', {
+        headers: { 'Authorization': 'Bearer ' + session.access_token }
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!cancelled) setCredits(json.credits ?? 0)
+    }
+    load()
+    return () => { cancelled = true }
   }, [])
+
+  async function getToken(): Promise<string | null> {
+    const sb = getSupabase()
+    if (!sb) return null
+    const { data: { session } } = await sb.auth.getSession()
+    return session?.access_token ?? null
+  }
 
   async function onCreateInvite() {
     setLoading(true)
     setError(null)
     setCopied(false)
     try {
-      const sb = getSupabase()
-      const sessionResult = sb ? await sb.auth.getSession() : null
-      const accessToken = sessionResult?.data?.session?.access_token ?? null
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`
-      const res = await fetch('/api/invites/create', { method: 'POST', headers, credentials: 'include' })
+      const token = await getToken()
+      if (!token) { setError('You must be logged in to create an invite.'); return }
+      const res = await fetch('/api/invites/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        credentials: 'include'
+      })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || data?.error) {
-        setError(res.status === 401 ? 'You must be logged in to create an invite.' : String(data?.error ?? 'invite_create_failed'))
+        setError(String(data?.detail ?? data?.error ?? 'invite_create_failed'))
         return
       }
       setInviteUrl(data.invite_url ?? null)
@@ -79,9 +80,7 @@ export default function CreateInviteClientShell() {
     if (!inviteUrl) return
     if (navigator.share) {
       navigator.share({ title: 'Join me on BetterMate', text: 'I saved a spot for you on BetterMate — invite only, values-first.', url: inviteUrl })
-    } else {
-      onCopy()
-    }
+    } else { onCopy() }
   }
 
   const gold = '#C9A96E'
@@ -100,7 +99,6 @@ export default function CreateInviteClientShell() {
       </div>
 
       <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(219,39,119,0.07) 100%)', border: '1px solid rgba(124,58,237,0.28)', borderRadius: 20, padding: '36px 32px', maxWidth: 420, width: '100%' }}>
-
         {!inviteUrl ? (
           <>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -115,24 +113,17 @@ export default function CreateInviteClientShell() {
               BetterMate is invite-only. Your invite link is valid for 7 days and can be used once.
             </p>
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '16px 18px', marginBottom: 28 }}>
-              {[
-                'Compatibility scoring across 5 dimensions',
-                'Date Pledge Bond — credits at stake',
-                'GPS venue check-in — no ghosting',
-                'Integrity Score that follows you',
-              ].map((line) => (
+              {['Compatibility scoring across 5 dimensions','Date Pledge Bond — credits at stake','GPS venue check-in — no ghosting','Integrity Score that follows you'].map((line) => (
                 <div key={line} style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'flex-start' }}>
                   <span style={{ color: gold, fontSize: 14, marginTop: 1 }}>+</span>
                   <span style={{ color: colors.textSecondary, fontSize: 13, lineHeight: 1.5 }}>{line}</span>
                 </div>
               ))}
             </div>
-            {credits === null && (
-              <p style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', marginBottom: 16 }}>Loading your invites...</p>
-            )}
+            {credits === null && <p style={{ color: colors.textMuted, fontSize: 12, textAlign: 'center', marginBottom: 16 }}>Loading your invites...</p>}
             {error && <p style={{ color: '#f87171', fontSize: 13, margin: '0 0 16px' }}>{error}</p>}
             <button onClick={onCreateInvite} disabled={loading || credits === 0 || credits === null}
-              style={{ width: '100%', background: (loading || credits === 0 || credits === null) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #7c3aed, #db2777)', color: (loading || credits === 0 || credits === null) ? colors.textMuted : '#fff', border: 'none', borderRadius: 12, padding: '15px 24px', fontSize: 15, fontWeight: 700, cursor: (loading || credits === 0 || credits === null) ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif', letterSpacing: 0.3, transition: 'all 0.2s' }}>
+              style={{ width: '100%', background: (loading || !credits) ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #7c3aed, #db2777)', color: (loading || !credits) ? colors.textMuted : '#fff', border: 'none', borderRadius: 12, padding: '15px 24px', fontSize: 15, fontWeight: 700, cursor: (loading || !credits) ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif', letterSpacing: 0.3, transition: 'all 0.2s' }}>
               {loading ? 'Generating link...' : credits === null ? 'Loading...' : credits === 0 ? 'No invites remaining' : 'Generate Invite Link'}
             </button>
           </>
