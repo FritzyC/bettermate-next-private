@@ -49,15 +49,6 @@ export default function InviteClientShell({ code }: { code: string }) {
   }
 
   useEffect(() => {
-    const supabase = getSupabase();
-    if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) handleAccept();
-      });
-    }
-  }, [code]);
-
-  useEffect(() => {
     fetch("/api/invites/preview?token=" + code)
       .then((r) => r.json())
       .then((d) => {

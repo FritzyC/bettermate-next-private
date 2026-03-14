@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client'
 import PhotoUpload from '@/components/profile/PhotoUpload';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 type Step = 'welcome' | 'compact' | 'fingerprint' | 'values' | 'preferences' | 'completion' | 'entry';
 type Fingerprint = { music: string[]; hobbies: string[] };
@@ -344,6 +344,8 @@ function Entry({ hasMatch }: { hasMatch:boolean }) {
 export default function OnboardingFlow() {
   // supabase already imported
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const postOnboardingNext = searchParams?.get('next') ?? '/matches';
   const [step, setStep] = useState<Step>('welcome');
   const [checking, setChecking] = useState(true);
   const [fp, setFp] = useState<Fingerprint>({ music:[], hobbies:[] });
@@ -392,7 +394,7 @@ export default function OnboardingFlow() {
         fitness_lifestyle: prefs.fitness.values, fitness_dealbreaker: prefs.fitness.dealbreaker,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
-      router.replace('/matches');
+      router.replace(postOnboardingNext);
     } catch(e:unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally { setLoading(false); }
