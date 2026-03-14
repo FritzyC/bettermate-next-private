@@ -24,9 +24,10 @@ export default function Loading() {
           src="/bettermate-logo.png"
           alt="BetterMate"
           style={{
-            width: 200,
+            width: 220,
             height: 'auto',
-            filter: 'drop-shadow(0 0 32px rgba(124, 58, 237, 0.4))',
+            mixBlendMode: 'screen',
+            filter: 'drop-shadow(0 0 40px rgba(124, 58, 237, 0.5))',
           }}
         />
       </div>
