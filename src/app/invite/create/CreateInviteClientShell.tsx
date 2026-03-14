@@ -18,12 +18,14 @@ export default function CreateInviteClientShell() {
     async function load() {
       const sb = getSupabase()
       if (!sb) return
-      let session = (await sb.auth.getSession()).data.session
-      if (!session) {
-        await new Promise(r => setTimeout(r, 1200))
-        session = (await sb.auth.getSession()).data.session
+      let session = null
+      for (let i = 0; i < 8; i++) {
+        const res = await sb.auth.getSession()
+        session = res.data.session
+        if (session) break
+        await new Promise(r => setTimeout(r, 500 * (i + 1)))
       }
-      if (!session || cancelled) return
+      if (!session || cancelled) { if (!cancelled) setCredits(0); return }
       const res = await fetch('/api/invites/credits', {
         headers: { 'Authorization': 'Bearer ' + session.access_token }
       })
