@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useOnboardingGuard } from '@/hooks/useOnboardingGuard'
 import { getSupabase } from '@/lib/supabaseClient'
 import { colors } from '@/lib/bm/tokens'
@@ -8,12 +8,26 @@ import { colors } from '@/lib/bm/tokens'
 export default function CreateInviteClientShell() {
   useOnboardingGuard()
   const [loading, setLoading] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
   const [credits, setCredits] = useState<number | null>(null)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
+  useEffect(() => {
+    const sb = getSupabase()
+    if (!sb) return
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session?.access_token) setToken(session.access_token)
+    })
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_e, session) => {
+      setToken(session?.access_token ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
   async function getToken(): Promise<string | null> {
+    if (token) return token
     const sb = getSupabase()
     if (!sb) return null
     const { data: { session } } = await sb.auth.getSession()
