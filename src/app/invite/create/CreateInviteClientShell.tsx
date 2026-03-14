@@ -18,13 +18,19 @@ export default function CreateInviteClientShell() {
     async function load() {
       const sb = getSupabase()
       if (!sb) return
-      let session = null
-      for (let i = 0; i < 8; i++) {
-        const res = await sb.auth.getSession()
-        session = res.data.session
-        if (session) break
-        await new Promise(r => setTimeout(r, 500 * (i + 1)))
+      // getUser() makes a real network call — not localStorage dependent
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user || cancelled) {
+        // fallback: try getSession once more after delay
+        await new Promise(r => setTimeout(r, 1500))
+        const { data: { session } } = await sb.auth.getSession()
+        if (!session || cancelled) { if (!cancelled) setCredits(0); return }
+        const r2 = await fetch('/api/invites/credits', { headers: { 'Authorization': 'Bearer ' + session.access_token } })
+        const j2 = await r2.json().catch(() => ({}))
+        if (!cancelled) setCredits(j2.credits ?? 0)
+        return
       }
+      const { data: { session } } = await sb.auth.getSession()
       if (!session || cancelled) { if (!cancelled) setCredits(0); return }
       const res = await fetch('/api/invites/credits', {
         headers: { 'Authorization': 'Bearer ' + session.access_token }
