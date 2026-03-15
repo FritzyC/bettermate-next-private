@@ -104,10 +104,13 @@ export default function InviteClientShell({ code }: { code: string }) {
               Sign out
             </button>
           ) : (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <a href="/how-it-works" style={{ color: "#7A6A96", fontSize: 11, textDecoration: "underline", fontFamily: "Georgia, serif" }}>How it works</a>
             <a href={"/auth?next=/invite/" + code}
               style={{ background: "linear-gradient(135deg, #7c3aed, #db2777)", color: "#fff", borderRadius: 8, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "Georgia, serif", textDecoration: "none" }}>
               Login / Create Profile
             </a>
+          </div>
           )}
         </div>
 

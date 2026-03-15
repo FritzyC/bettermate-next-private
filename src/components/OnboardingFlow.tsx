@@ -337,8 +337,11 @@ function Entry({ hasMatch }: { hasMatch:boolean }) {
     <Shell>
       <div style={{ textAlign:'center', marginBottom:40 }}>
         <div style={{ fontSize:40, marginBottom:20, color:'#7c3aed' }}>◈</div>
-        <h1 style={S.h1}>You're in.</h1>
-        <p style={S.body}>BetterMate works best when you know who you're inviting.</p>
+        <h1 style={S.h1}>You are in.</h1>
+        <p style={S.body}>Welcome to BetterMate. Connection earns its place here — and so do you.</p>
+        <a href="/how-it-works" style={{ display:'inline-block', marginTop:12, fontSize:12, color:'#C9A96E', fontFamily:'system-ui,sans-serif', textDecoration:'underline' }}>
+          Learn how BetterMate works →
+        </a>
       </div>
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
         <button onClick={()=>window.location.href='/invite'} style={{ padding:'22px 24px', borderRadius:16, border:'1.5px solid rgba(124,58,237,0.3)', background:'rgba(124,58,237,0.08)', color:'#c4b5fd', fontFamily:"'Georgia',serif", fontSize:16, cursor:'pointer', textAlign:'left' }}>
