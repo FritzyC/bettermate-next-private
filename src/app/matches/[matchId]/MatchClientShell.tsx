@@ -50,6 +50,8 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       setUserId(session.user.id);
       supabase.from('messages').select('*').eq('match_id', matchId).order('created_at', { ascending: true })
         .then(({ data }) => { setMessages(data ?? []); setLoading(false); });
+      supabase.from('matches').select('blind_revealed').eq('id', matchId).single()
+        .then(({ data }) => { if (data?.blind_revealed) setBlindRevealed(true); });
       const channel = supabase.channel('messages:' + matchId)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'match_id=eq.' + matchId },
           (payload) => { setMessages((prev) => [...prev, payload.new]); })
@@ -73,7 +75,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         const isUser1 = matchData.user1_id === userId;
         const field = isUser1 ? 'user1_qualifying_msgs' : 'user2_qualifying_msgs';
         const currentCount = isUser1 ? matchData.user1_qualifying_msgs : matchData.user2_qualifying_msgs;
-        if (currentCount < 6) {
+        if (currentCount < 3) {
           await supabase.from('matches').update({ [field]: currentCount + 1 }).eq('id', matchId);
         }
       }
@@ -167,9 +169,9 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         </div>
       )}
 
-      {/* Date Plan */}
-      {userId && <CommitmentBond matchId={matchId} userId={userId} planStatus={planStatus} scheduledAt={null} />}
-      {showDatePlan && userId && (
+      {/* Date Plan — only visible after blind chat reveal */}
+      {userId && blindRevealed && <CommitmentBond matchId={matchId} userId={userId} planStatus={planStatus} scheduledAt={null} />}
+      {showDatePlan && blindRevealed && userId && (
         <div style={{ flexShrink: 0, maxHeight: '45vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
           <DatePlan matchId={matchId} userId={userId} inline />
         </div>
