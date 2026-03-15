@@ -40,6 +40,8 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   const [showDatePlan, setShowDatePlan] = useState(false);
   const [matchOnHold, setMatchOnHold] = useState(false);
   const [meetDeadline, setMeetDeadline] = useState<string | null>(null);
+  const [distanceMiles, setDistanceMiles] = useState<number | null>(null);
+  const [withinRange, setWithinRange] = useState<boolean | null>(null);
   const [showSpotify, setShowSpotify] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +54,11 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       setUserId(session.user.id);
       supabase.from('messages').select('*').eq('match_id', matchId).order('created_at', { ascending: true })
         .then(({ data }) => { setMessages(data ?? []); setLoading(false); });
+      supabase.auth.getSession().then(({ data: { session: s } }) => {
+        if (!s) return;
+        fetch('/api/match/distance?matchId=' + matchId + '&userId=' + s.user.id, { headers: { 'Authorization': 'Bearer ' + s.access_token } })
+          .then(r => r.json()).then(d => { if (d.ok && d.coords_available) { setDistanceMiles(d.distance_miles); setWithinRange(d.within_50); } }).catch(() => {});
+      });
       supabase.from('matches').select('blind_revealed,meet_deadline,status,on_hold_at').eq('id', matchId).single()
         .then(({ data }) => {
           if (data?.blind_revealed) setBlindRevealed(true);
@@ -133,6 +140,22 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
           <a href={'/payments/reactivate?matchId=' + matchId}
             style={{ flexShrink: 0, background: 'linear-gradient(135deg, #7c3aed, #db2777)', color: '#fff', borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 700, textDecoration: 'none', fontFamily: 'Georgia, serif' }}>
             Reactivate — $4.99
+          </a>
+        </div>
+      )}
+
+      {/* Extended Chat Banner — shown when > 50 miles and revealed */}
+      {blindRevealed && withinRange === false && !matchOnHold && (
+        <div style={{ flexShrink: 0, background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#c4b5fd', marginBottom: 2 }}>
+              {distanceMiles ? distanceMiles + ' miles apart' : 'Long distance connection'}
+            </div>
+            <div style={{ fontSize: 11, color: '#7A6A96', lineHeight: 1.5 }}>Keep the connection alive — $0.99/day</div>
+          </div>
+          <a href={'/payments/extend-chat?matchId=' + matchId}
+            style={{ flexShrink: 0, background: 'rgba(124,58,237,0.2)', color: '#c4b5fd', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 10, padding: '7px 14px', fontSize: 12, fontWeight: 700, textDecoration: 'none', fontFamily: 'Georgia, serif' }}>
+            Extend Chat
           </a>
         </div>
       )}
