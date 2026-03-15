@@ -43,9 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (data?.ok === true) {
-      // Grant new user 2 invite credits — upsert so it works even if row doesn't exist yet
-      await admin.from('user_fingerprint')
-        .upsert({ id: user.id, invite_credits: 2 }, { onConflict: 'id', ignoreDuplicates: false });
+      try { await admin.from("behavior_events").insert({ event_type: "invite_accepted", user_id: user.id, payload: { match_id: data.match_id, idempotent: !!data.idempotent }, created_at: new Date().toISOString() }); } catch (_) {}
       return NextResponse.json({ ok: true, match_id: data.match_id, idempotent: !!data.idempotent });
     }
 

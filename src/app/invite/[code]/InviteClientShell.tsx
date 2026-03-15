@@ -17,6 +17,7 @@ export default function InviteClientShell({ code }: { code: string }) {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
+  const [authed, setAuthed] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
 
   async function handleAccept() {
@@ -47,6 +48,11 @@ export default function InviteClientShell({ code }: { code: string }) {
       setAccepting(false);
     }
   }
+
+  useEffect(() => {
+    const sb = getSupabase()
+    if (sb) sb.auth.getSession().then(({ data: { session } }) => setAuthed(!!session))
+  }, [])
 
   useEffect(() => {
     fetch("/api/invites/preview?token=" + code)
@@ -88,8 +94,21 @@ export default function InviteClientShell({ code }: { code: string }) {
 
       {/* HERO */}
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "72px 28px 56px", textAlign: "center" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,169,110,0.1)", border: "1px solid rgba(201,169,110,0.25)", borderRadius: 20, padding: "6px 14px", marginBottom: 32 }}>
-          <span style={{ color: gold, fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase" }}>Private Invite from {preview.inviter_name}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32, width: "100%" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(201,169,110,0.1)", border: "1px solid rgba(201,169,110,0.25)", borderRadius: 20, padding: "6px 14px" }}>
+            <span style={{ color: gold, fontSize: 12, letterSpacing: 1.5, textTransform: "uppercase" }}>Private Invite from {preview.inviter_name}</span>
+          </div>
+          {authed ? (
+            <button onClick={async () => { const sb = getSupabase(); if (sb) await sb.auth.signOut(); window.location.reload(); }}
+              style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.1)", color: "#9d84d0", borderRadius: 8, padding: "6px 14px", fontSize: 12, cursor: "pointer", fontFamily: "Georgia, serif" }}>
+              Sign out
+            </button>
+          ) : (
+            <a href={"/auth?next=/invite/" + code}
+              style={{ background: "linear-gradient(135deg, #7c3aed, #db2777)", color: "#fff", borderRadius: 8, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "Georgia, serif", textDecoration: "none" }}>
+              Login / Create Profile
+            </a>
+          )}
         </div>
 
         <h1 style={{ fontSize: "clamp(32px, 6vw, 52px)", fontWeight: 700, margin: "0 0 16px", lineHeight: 1.15, letterSpacing: "-0.5px", color: colors.textPrimary }}>

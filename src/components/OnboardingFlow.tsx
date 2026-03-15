@@ -394,6 +394,17 @@ export default function OnboardingFlow() {
         fitness_lifestyle: prefs.fitness.values, fitness_dealbreaker: prefs.fitness.dealbreaker,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
+
+      try {
+        const accessToken = (await supabase.auth.getSession()).data.session?.access_token;
+        if (accessToken) {
+          await fetch('/api/user/activate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + accessToken },
+          });
+        }
+      } catch (_) {}
+
       router.replace(postOnboardingNext);
     } catch(e:unknown) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');

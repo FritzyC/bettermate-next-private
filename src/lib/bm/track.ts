@@ -92,7 +92,12 @@ export type EventType =
   | 'bond.active'
   | 'bond.checkin_prompt_shown'
   | 'bond.checkin_submitted'
-  | 'bond.resolved';
+  | 'bond.resolved'
+  | 'invite_landing_viewed'
+  | 'invite_auth_started'
+  | 'user_activated'
+  | 'invite_credits_granted'
+  | 'onboarding_started';
 export async function trackEvent(
   eventType: EventType,
   payload: Record<string, any> = {},
