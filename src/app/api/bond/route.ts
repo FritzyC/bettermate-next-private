@@ -100,7 +100,11 @@ export async function POST(req: NextRequest) {
     const { data: updatedBond, error: bondErr } = await admin.from('commitment_bonds').update(lockUpdate).eq('id', typedBond.id).select().single()
     if (bondErr) return NextResponse.json({ error: bondErr.message }, { status: 500 })
     if (lockUpdate.status === 'active') {
+      const meetDeadline = scheduledAt
+        ? new Date(new Date(scheduledAt).getTime() + 168 * 3600000).toISOString()
+        : new Date(Date.now() + 168 * 3600000).toISOString()
       await admin.from('date_plans').update({ status: 'plan_scheduled' }).eq('match_id', matchId).eq('status', 'pending_pledge')
+      await admin.from('matches').update({ meet_deadline: meetDeadline }).eq('id', matchId)
       await admin.from('messages').insert({ match_id: matchId, sender_user_id: null, content: '📅 Date confirmed. Both pledges are locked. Your credits will release after check-in.', type: 'system' }).select().maybeSingle()
     }
     return NextResponse.json({ bond: updatedBond })

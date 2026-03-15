@@ -38,6 +38,8 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
   const [showWallet, setShowWallet] = useState(false);
   const [coachingHint, setCoachingHint] = useState<string | null>(null);
   const [showDatePlan, setShowDatePlan] = useState(false);
+  const [matchOnHold, setMatchOnHold] = useState(false);
+  const [meetDeadline, setMeetDeadline] = useState<string | null>(null);
   const [showSpotify, setShowSpotify] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -50,8 +52,14 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       setUserId(session.user.id);
       supabase.from('messages').select('*').eq('match_id', matchId).order('created_at', { ascending: true })
         .then(({ data }) => { setMessages(data ?? []); setLoading(false); });
-      supabase.from('matches').select('blind_revealed').eq('id', matchId).single()
-        .then(({ data }) => { if (data?.blind_revealed) setBlindRevealed(true); });
+      supabase.from('matches').select('blind_revealed,meet_deadline,status,on_hold_at').eq('id', matchId).single()
+        .then(({ data }) => {
+          if (data?.blind_revealed) setBlindRevealed(true);
+          if (data?.meet_deadline) setMeetDeadline(data.meet_deadline);
+          if (data?.on_hold_at || (data?.meet_deadline && new Date(data.meet_deadline) < new Date() && data?.status !== 'completed_checked_in')) {
+            setMatchOnHold(true);
+          }
+        });
       const channel = supabase.channel('messages:' + matchId)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'match_id=eq.' + matchId },
           (payload) => { setMessages((prev) => [...prev, payload.new]); })
@@ -109,6 +117,25 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
 
   return (
     <div style={{ height: '100vh', background: '#1E1035', fontFamily: 'system-ui', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+      {/* On Hold Banner */}
+      {matchOnHold && (
+        <div style={{ flexShrink: 0, background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: 0, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#C9A96E', marginBottom: 2 }}>This connection is on hold.</div>
+            <div style={{ fontSize: 11, color: '#7A6A96', lineHeight: 1.5 }}>
+              {meetDeadline
+                ? 'The 168-hour meet window has passed.'
+                : 'This match is currently paused.'}
+              {' '}Reactivate to continue.
+            </div>
+          </div>
+          <a href={'/payments/reactivate?matchId=' + matchId}
+            style={{ flexShrink: 0, background: 'linear-gradient(135deg, #7c3aed, #db2777)', color: '#fff', borderRadius: 10, padding: '8px 16px', fontSize: 12, fontWeight: 700, textDecoration: 'none', fontFamily: 'Georgia, serif' }}>
+            Reactivate — $4.99
+          </a>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{ flexShrink: 0, padding: '14px 20px', background: '#2A1648', borderBottom: '1px solid #5a1a8a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
