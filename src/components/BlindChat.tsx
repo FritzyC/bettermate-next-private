@@ -95,7 +95,7 @@ export default function BlindChat({
     const supabase = getSupabase();
     if (!supabase) return;
 
-    const isUser1 = matchData.user1_id === userId;
+    const isUser1 = matchData.user_a_id === userId;
     const myCount = isUser1 ? matchData.user1_qualifying_msgs : matchData.user2_qualifying_msgs;
     const theirCount = isUser1 ? matchData.user2_qualifying_msgs : matchData.user1_qualifying_msgs;
     const timeElapsed = hoursSince(matchData.blind_chat_started_at) >= 24;
@@ -118,7 +118,7 @@ export default function BlindChat({
   if (loading) return null;
   if (!match) return null;
 
-  const isUser1 = match.user1_id === userId;
+  const isUser1 = match.user_a_id === userId;
   const myCount = Math.min(isUser1 ? match.user1_qualifying_msgs : match.user2_qualifying_msgs, 3);
   const theirCount = Math.min(isUser1 ? match.user2_qualifying_msgs : match.user1_qualifying_msgs, 3);
   const THRESHOLD = 3;

@@ -72,7 +72,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
     if (userId && !blindRevealed && isQualifying(newMessage)) {
       const { data: matchData } = await supabase.from('matches').select('*').eq('id', matchId).single();
       if (matchData && !matchData.blind_revealed) {
-        const isUser1 = matchData.user1_id === userId;
+        const isUser1 = matchData.user_a_id === userId;
         const field = isUser1 ? 'user1_qualifying_msgs' : 'user2_qualifying_msgs';
         const currentCount = isUser1 ? matchData.user1_qualifying_msgs : matchData.user2_qualifying_msgs;
         if (currentCount < 3) {
