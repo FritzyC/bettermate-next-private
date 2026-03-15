@@ -6,7 +6,7 @@ import PhotoUpload from '@/components/profile/PhotoUpload';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 type Step = 'welcome' | 'compact' | 'fingerprint' | 'values' | 'preferences' | 'completion' | 'entry';
-type Fingerprint = { music: string[]; hobbies: string[] };
+type Fingerprint = { music: string[]; hobbies: string[]; zip: string };
 type Values = { life_trajectory: string; conflict_style: string; finance_alignment: string; growth_orientation: string; relationship_readiness: string };
 type PrefField = { values: string[]; dealbreaker: boolean };
 type Preferences = {
@@ -165,7 +165,7 @@ function Compact({ onNext }: { onNext:()=>void }) {
 function Fingerprint({ fp, setFp, onNext }: { fp:Fingerprint; setFp:(f:Fingerprint)=>void; onNext:()=>void }) {
   const toggleM = (g:string) => setFp({ ...fp, music: fp.music.includes(g) ? fp.music.filter(x=>x!==g) : [...fp.music,g] });
   const toggleH = (h:string) => setFp({ ...fp, hobbies: fp.hobbies.includes(h) ? fp.hobbies.filter(x=>x!==h) : [...fp.hobbies,h] });
-  const ok = fp.music.length >= 1 && fp.hobbies.length >= 3;
+  const ok = fp.music.length >= 1 && fp.hobbies.length >= 3 && fp.zip.trim().length >= 5;
   return (
     <Shell>
       <p style={S.eyebrow}>Cultural Fingerprint</p>
@@ -187,7 +187,20 @@ function Fingerprint({ fp, setFp, onNext }: { fp:Fingerprint; setFp:(f:Fingerpri
           {INTERESTS.map(h => <Chip key={h} label={h} active={fp.hobbies.includes(h)} disabled={!fp.hobbies.includes(h)&&fp.hobbies.length>=6} onClick={()=>toggleH(h)} />)}
         </div>
       </div>
-      {!ok && <p style={{ fontFamily:'system-ui,sans-serif', fontSize:12, color:'#3a2a55', textAlign:'center', marginBottom:16 }}>Choose at least 1 genre + 3 interests to continue</p>}
+      <div style={{ marginBottom:24 }}>
+        <p style={{ fontFamily:'system-ui,sans-serif', fontSize:14, color:'#9a8ab0', margin:'0 0 10px' }}>Your zip code</p>
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={5}
+          placeholder="e.g. 10001"
+          value={fp.zip}
+          onChange={e => setFp({ ...fp, zip: e.target.value.replace(/\D/g,'') })}
+          style={{ width:'100%', padding:'14px 16px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(124,58,237,0.3)', borderRadius:12, color:'#fff', fontSize:16, fontFamily:'system-ui,sans-serif', outline:'none', boxSizing:'border-box' }}
+        />
+        <p style={{ fontFamily:'system-ui,sans-serif', fontSize:11, color:'#3a2a55', margin:'6px 0 0' }}>Used to find compatible people near you. Never shared with matches.</p>
+      </div>
+      {!ok && <p style={{ fontFamily:'system-ui,sans-serif', fontSize:12, color:'#3a2a55', textAlign:'center', marginBottom:16 }}>Choose at least 1 genre + 3 interests + enter your zip to continue</p>}
       <Btn onClick={onNext} disabled={!ok}>Continue →</Btn>
     </Shell>
   );
@@ -348,7 +361,7 @@ export default function OnboardingFlow() {
   const postOnboardingNext = searchParams?.get('next') ?? '/matches';
   const [step, setStep] = useState<Step>('welcome');
   const [checking, setChecking] = useState(true);
-  const [fp, setFp] = useState<Fingerprint>({ music:[], hobbies:[] });
+  const [fp, setFp] = useState<Fingerprint>({ music:[], hobbies:[], zip:'' });
   const [values, setValues] = useState<Partial<Values>>({});
   const [prefs, setPrefs] = useState<Preferences>(defaultPrefs());
   const [loading, setLoading] = useState(false);
@@ -375,7 +388,7 @@ export default function OnboardingFlow() {
     try {
       const { data:{ user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      const { error:e1 } = await supabase.from('user_fingerprint').upsert({ id:user.id, music_genres:fp.music, hobbies:fp.hobbies, onboarding_complete:true, updated_at:new Date().toISOString() },{ onConflict:'id' });
+      const { error:e1 } = await supabase.from('user_fingerprint').upsert({ id:user.id, music_genres:fp.music, hobbies:fp.hobbies, onboarding_complete:true, zip_code:fp.zip||null, updated_at:new Date().toISOString() },{ onConflict:'id' });
       if (e1) throw e1;
       const { error:e2 } = await supabase.from('user_values').upsert({ user_id:user.id, ...(values as Values), updated_at:new Date().toISOString() },{ onConflict:'user_id' });
       if (e2) throw e2;
