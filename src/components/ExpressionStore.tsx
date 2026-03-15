@@ -53,12 +53,13 @@ export default function ExpressionStore({ onClose, onUse, onOpenWallet }: {
     onUse(expr);
   }
 
-  const categoryOrder = ['vibe', 'intimate', 'deep', 'premium'];
+  const categoryOrder = ['vibe', 'flirt', 'intimate', 'deep', 'premium'];
   const categoryLabels: Record<string, string> = {
-    vibe: 'Vibes',
-    intimate: 'Intimate',
-    deep: 'Deep',
-    premium: 'Premium',
+    vibe: '✦ First Sparks',
+    flirt: '✦ Gentle Pull',
+    intimate: '✦ Moving Forward',
+    deep: '✦ Emotional Depth',
+    premium: '✦ Rare Signals',
   };
   const grouped = categoryOrder.map(cat => ({
     cat,
