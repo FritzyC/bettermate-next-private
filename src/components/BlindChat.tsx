@@ -99,10 +99,10 @@ export default function BlindChat({
     const myCount = isUser1 ? matchData.user1_qualifying_msgs : matchData.user2_qualifying_msgs;
     const theirCount = isUser1 ? matchData.user2_qualifying_msgs : matchData.user1_qualifying_msgs;
     const timeElapsed = hoursSince(matchData.blind_chat_started_at) >= 24;
-    const mutualThreshold = myCount >= 6 && theirCount >= 6;
+    const mutualThreshold = myCount >= 3 && theirCount >= 3;
 
-    if (timeElapsed || mutualThreshold) {
-      const reason = mutualThreshold ? 'mutual_interactions' : 'time_elapsed';
+    if (timeElapsed && mutualThreshold) {
+      const reason = 'mutual_interactions';
       const { data: updated } = await supabase
         .from('matches')
         .update({ blind_revealed: true, blind_revealed_at: new Date().toISOString(), blind_reveal_reason: reason })
@@ -119,9 +119,9 @@ export default function BlindChat({
   if (!match) return null;
 
   const isUser1 = match.user1_id === userId;
-  const myCount = Math.min(isUser1 ? match.user1_qualifying_msgs : match.user2_qualifying_msgs, 6);
-  const theirCount = Math.min(isUser1 ? match.user2_qualifying_msgs : match.user1_qualifying_msgs, 6);
-  const THRESHOLD = 6;
+  const myCount = Math.min(isUser1 ? match.user1_qualifying_msgs : match.user2_qualifying_msgs, 3);
+  const theirCount = Math.min(isUser1 ? match.user2_qualifying_msgs : match.user1_qualifying_msgs, 3);
+  const THRESHOLD = 3;
 
   if (revealed || match.blind_revealed) {
     return (
@@ -131,7 +131,7 @@ export default function BlindChat({
           <div style={{ fontSize: 13, fontWeight: 600, color: SUCCESS }}>Photos unlocked</div>
           <div style={{ fontSize: 11, color: MUTED }}>
             {match.blind_reveal_reason === 'mutual_interactions'
-              ? 'You both showed up in conversation.'
+              ? 'You both showed up. 24 hours passed and you each sent 3+ messages.'
               : 'Blind chat period complete.'}
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function BlindChat({
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: TEXT, marginBottom: 2 }}>Blind Chat</div>
           <div style={{ fontSize: 12, color: TEXT2, lineHeight: 1.6 }}>
-            Photos unlock after 24 hours — or when you both send 6 meaningful messages. Let the conversation lead.
+            Photos unlock after 24 hours — once you've each sent at least 3 meaningful messages. Both conditions must be met.
           </div>
         </div>
       </div>
