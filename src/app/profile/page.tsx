@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
+import { getSupabase } from '@/lib/supabaseClient'
 import PhotoUpload from '@/components/profile/PhotoUpload'
 import { colors, fonts, radii } from '@/lib/bm/tokens'
 
@@ -14,10 +14,12 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    const sb = getSupabase()
+    if (!sb) { router.replace('/auth'); return }
+    sb.auth.getUser().then(({ data: { user } }) => {
       if (!user) { router.replace('/auth'); return }
       setUserId(user.id)
-      supabase.from('user_fingerprint').select('photos').eq('id', user.id).maybeSingle()
+      sb.from('user_fingerprint').select('photos').eq('id', user.id).maybeSingle()
         .then(({ data }) => {
           if (data?.photos) setPhotos(data.photos)
           setLoading(false)
