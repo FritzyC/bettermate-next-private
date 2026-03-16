@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -10,10 +12,19 @@ export async function POST(req: NextRequest) {
 
     if (!file || !userId) return NextResponse.json({ error: 'Missing file or userId' }, { status: 400 })
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+
     if (!supabaseUrl || !serviceKey) {
-      return NextResponse.json({ error: 'Server configuration error — missing env vars', debug: { hasUrl: !!supabaseUrl, hasKey: !!serviceKey } }, { status: 500 })
+      const available = Object.keys(process.env).filter(k => k.includes('SUPA') || k.includes('SERVICE'))
+      return NextResponse.json({ 
+        error: 'Server configuration error — missing env vars',
+        debug: { 
+          hasUrl: !!supabaseUrl, 
+          hasKey: !!serviceKey,
+          availableKeys: available
+        }
+      }, { status: 500 })
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceKey)
