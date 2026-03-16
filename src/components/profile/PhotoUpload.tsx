@@ -14,7 +14,7 @@ const MAX_SIZE = 5 * 1024 * 1024
 const ALLOWED = ['image/jpeg', 'image/png', 'image/webp']
 
 export default function PhotoUpload({ userId, existingPhotos = [], onPhotosChange }: PhotoUploadProps) {
-  const [photos, setPhotos] = useState<string[]>(existingPhotos)
+  const [photos, setPhotos] = useState<string[]>([])
   const [uploading, setUploading] = useState<number | null>(null)
   const [errors, setErrors] = useState<Record<number, string>>({})
   const inputRef = useRef<HTMLInputElement>(null)
