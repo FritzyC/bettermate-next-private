@@ -153,14 +153,14 @@ export function AuthClient(): React.ReactElement {
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="000000"
+                placeholder="00000000"
                 value={code}
-                onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={e => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 8))}
                 required
                 autoFocus
                 style={{ ...inputStyle, fontSize: 28, textAlign: 'center', letterSpacing: 8, fontFamily: 'system-ui' }}
               />
-              <button type="submit" disabled={loading || code.length < 6} style={btnPrimary}>
+              <button type="submit" disabled={loading || code.length < 6 || code.length > 8} style={btnPrimary}>
                 {loading ? 'Verifying…' : 'Continue'}
               </button>
             </form>
