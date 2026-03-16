@@ -8,7 +8,6 @@ import { colors } from '@/lib/bm/tokens'
 export default function CreateInviteClientShell() {
   useOnboardingGuard()
   const [loading, setLoading] = useState(false)
-  const [token, setToken] = useState<string | null>(null)
   const [credits, setCredits] = useState<number | null>(null)
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -17,33 +16,38 @@ export default function CreateInviteClientShell() {
   useEffect(() => {
     const sb = getSupabase()
     if (!sb) return
-    sb.auth.getSession().then(({ data: { session } }) => {
-      if (session?.access_token) setToken(session.access_token)
-    })
     const { data: { subscription } } = sb.auth.onAuthStateChange((_e, session) => {
-      setToken(session?.access_token ?? null)
+      if (session?.user?.id) {
+        sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
+          .then(({ data }) => { if (data) setCredits(data.invite_credits ?? 0) })
+      }
+    })
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) {
+        sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
+          .then(({ data }) => { if (data) setCredits(data.invite_credits ?? 0) })
+      }
     })
     return () => subscription.unsubscribe()
   }, [])
-
-  async function getToken(): Promise<string | null> {
-    if (token) return token
-    const sb = getSupabase()
-    if (!sb) return null
-    const { data: { session } } = await sb.auth.getSession()
-    return session?.access_token ?? null
-  }
 
   async function onCreateInvite() {
     setLoading(true)
     setError(null)
     setCopied(false)
     try {
-      const token = await getToken()
-      if (!token) { setError('You must be logged in to create an invite.'); return }
+      const sb = getSupabase()
+      if (!sb) { setError('Not authenticated.'); return }
+      let { data: { session } } = await sb.auth.getSession()
+      if (!session) {
+        await new Promise(r => setTimeout(r, 1000))
+        const result = await sb.auth.getSession()
+        session = result.data.session
+      }
+      if (!session) { setError('You must be logged in to create an invite.'); return }
       const res = await fetch('/api/invites/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
         credentials: 'include',
         cache: 'no-store',
       })
@@ -59,9 +63,8 @@ export default function CreateInviteClientShell() {
       }
       if (!data?.invite_url) { setError('invite_create_failed'); return }
       setInviteUrl(data.invite_url)
-      const cr = await fetch('/api/invites/credits', { headers: { Authorization: 'Bearer ' + token }, cache: 'no-store' })
-      const cj = await cr.json().catch(() => ({}))
-      if (typeof cj.credits === 'number') setCredits(cj.credits)
+      const { data: fp } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
+      if (fp) setCredits(fp.invite_credits ?? 0)
     } catch (e: unknown) {
       setError((e as { message?: string })?.message ?? 'network_error')
     } finally {
@@ -156,7 +159,7 @@ export default function CreateInviteClientShell() {
               style={{ display: 'block', textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 600, color: gold, fontFamily: 'Georgia, serif', textDecoration: 'none', marginBottom: 16 }}>
               Text This Invite
             </a>
-            <button onClick={() => { setInviteUrl(null); setError(null); }}
+            <button onClick={() => { setInviteUrl(null); setError(null) }}
               style={{ width: '100%', background: 'transparent', border: 'none', color: colors.textMuted, fontSize: 12, cursor: 'pointer', padding: '8px 0', textDecoration: 'underline', fontFamily: 'Georgia, serif' }}>
               Generate another invite
             </button>
