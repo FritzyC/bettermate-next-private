@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useOnboardingGuard } from '@/hooks/useOnboardingGuard'
 import { getSupabase } from '@/lib/supabaseClient'
 import { colors } from '@/lib/bm/tokens'
@@ -12,22 +12,34 @@ export default function CreateInviteClientShell() {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const tokenRef = useRef<string | null>(null)
 
   useEffect(() => {
     const sb = getSupabase()
     if (!sb) return
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_e, session) => {
-      if (session?.user?.id) {
-        sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
-          .then(({ data }) => { if (data) setCredits(data.invite_credits ?? 0) })
+
+    async function loadSession() {
+      if (!sb) return
+      const { data: { session } } = await sb.auth.getSession()
+      if (session?.access_token) {
+        tokenRef.current = session.access_token
+        const { data } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
+        if (data) setCredits(data.invite_credits ?? 0)
+      }
+    }
+
+    loadSession()
+
+    const { data: { subscription } } = sb.auth.onAuthStateChange(async (_e, session) => {
+      if (session?.access_token) {
+        tokenRef.current = session.access_token
+        const { data } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
+        if (data) setCredits(data.invite_credits ?? 0)
+      } else {
+        tokenRef.current = null
       }
     })
-    sb.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.id) {
-        sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
-          .then(({ data }) => { if (data) setCredits(data.invite_credits ?? 0) })
-      }
-    })
+
     return () => subscription.unsubscribe()
   }, [])
 
@@ -38,13 +50,17 @@ export default function CreateInviteClientShell() {
     try {
       const sb = getSupabase()
       if (!sb) { setError('Not authenticated.'); return }
-      const { data: { session } } = await sb.auth.getSession()
-      const { data: { user } } = await sb.auth.getUser()
-      const accessToken = session?.access_token
-      if (!user || !accessToken) { setError('You must be logged in to create an invite.'); return }
+
+      let token = tokenRef.current
+      if (!token) {
+        const { data: { session } } = await sb.auth.getSession()
+        token = session?.access_token ?? null
+      }
+      if (!token) { setError('You must be logged in to create an invite.'); return }
+
       const res = await fetch('/api/invites/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + accessToken },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         credentials: 'include',
         cache: 'no-store',
       })
@@ -60,8 +76,13 @@ export default function CreateInviteClientShell() {
       }
       if (!data?.invite_url) { setError('invite_create_failed'); return }
       setInviteUrl(data.invite_url)
-      const { data: fp } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
-      if (fp) setCredits(fp.invite_credits ?? 0)
+      if (sb) {
+        const { data: { session } } = await sb.auth.getSession()
+        if (session) {
+          const { data: fp } = await sb.from('user_fingerprint').select('invite_credits').eq('id', session.user.id).maybeSingle()
+          if (fp) setCredits(fp.invite_credits ?? 0)
+        }
+      }
     } catch (e: unknown) {
       setError((e as { message?: string })?.message ?? 'network_error')
     } finally {
@@ -91,7 +112,7 @@ export default function CreateInviteClientShell() {
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #0a041a 0%, #10062a 50%, #0a041a 100%)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', fontFamily: 'Georgia, serif' }}>
       <div style={{ marginBottom: 36, textAlign: 'center' }}>
-        <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg, #7c3aed, #db2777)', borderRadius: 16, margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, color: '#fff', fontWeight: 700 }}>B</div>
+        <div style={{ width: 56, height: 56, background: 'linear-gradient(135deg, #7c3aed, #db2877)', borderRadius: 16, margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, color: '#fff', fontWeight: 700 }}>B</div>
         <p style={{ color: colors.textMuted, fontSize: 12, margin: 0, letterSpacing: 2, textTransform: 'uppercase' }}>BetterMate</p>
         <button onClick={async () => { const sb = getSupabase(); if (sb) await sb.auth.signOut(); window.location.href = '/auth'; }}
           style={{ marginTop: 8, background: 'transparent', border: 'none', color: colors.textMuted, fontSize: 11, cursor: 'pointer', textDecoration: 'underline', fontFamily: 'Georgia, serif' }}>
@@ -122,7 +143,7 @@ export default function CreateInviteClientShell() {
             </div>
             {error && <p style={{ color: '#f87171', fontSize: 13, margin: '0 0 16px' }}>{error}</p>}
             <button onClick={onCreateInvite} disabled={loading}
-              style={{ width: '100%', background: loading ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #7c3aed, #db2777)', color: loading ? colors.textMuted : '#fff', border: 'none', borderRadius: 12, padding: '15px 24px', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif', letterSpacing: 0.3, transition: 'all 0.2s' }}>
+              style={{ width: '100%', background: loading ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, #7c3aed, #db2877)', color: loading ? colors.textMuted : '#fff', border: 'none', borderRadius: 12, padding: '15px 24px', fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'Georgia, serif', letterSpacing: 0.3, transition: 'all 0.2s' }}>
               {loading ? 'Generating link...' : 'Generate Invite Link'}
             </button>
           </>
@@ -148,7 +169,7 @@ export default function CreateInviteClientShell() {
                 {copied ? 'Copied!' : 'Copy Link'}
               </button>
               <button onClick={onShare}
-                style={{ flex: 1, background: 'linear-gradient(135deg, #7c3aed, #db2777)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
+                style={{ flex: 1, background: 'linear-gradient(135deg, #7c3aed, #db2877)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Georgia, serif' }}>
                 Share
               </button>
             </div>
