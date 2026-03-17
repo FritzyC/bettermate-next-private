@@ -50,6 +50,10 @@ export async function POST(req: NextRequest) {
     return json({ error: 'unauthorized', detail: debug ? uErr?.message : null }, 401);
   }
 
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return json({ error: 'missing_service_key', detail: 'SUPABASE_SERVICE_ROLE_KEY not available in this route' }, 500);
+  }
+
   // Check invite credits
   const adminClient = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false }
