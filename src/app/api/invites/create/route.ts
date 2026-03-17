@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   // Default expires: 7 days
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const { data: inviteRow, error: insErr } = await client
+  const { data: inviteRow, error: insErr } = await adminClient
     .from('invites')
     .insert({
       token,
