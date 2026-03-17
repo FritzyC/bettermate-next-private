@@ -30,7 +30,7 @@ export function AuthClient(): React.ReactElement {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+        redirectTo: `https://bettermate.me/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     });
     if (error) { setMessage(error.message); setLoading(false); }
