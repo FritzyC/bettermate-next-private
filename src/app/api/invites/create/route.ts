@@ -79,7 +79,10 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (insErr) {
-    return json({ error: 'invite_insert_failed', detail: debug ? insErr.message : null }, 500);
+    return json({ error: 'invite_insert_failed', detail: insErr.message, code: insErr.code }, 500);
+  }
+  if (!inviteRow) {
+    return json({ error: 'invite_insert_no_row', detail: 'insert succeeded but no row returned' }, 500);
   }
 
   const siteUrl =
