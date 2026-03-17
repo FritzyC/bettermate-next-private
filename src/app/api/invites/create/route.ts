@@ -50,12 +50,13 @@ export async function POST(req: NextRequest) {
     return json({ error: 'unauthorized', detail: debug ? uErr?.message : null }, 401);
   }
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  if (!serviceKey) {
     return json({ error: 'missing_service_key', detail: 'SUPABASE_SERVICE_ROLE_KEY not available in this route' }, 500);
   }
 
   // Check invite credits
-  const adminClient = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+  const adminClient = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false }
   })
   const { data: fp } = await adminClient.from('user_fingerprint').select('invite_credits').eq('id', user.id).maybeSingle()
