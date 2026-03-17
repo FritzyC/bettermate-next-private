@@ -52,10 +52,22 @@ export default function CreateInviteClientShell() {
       if (!sb) { setError('Not authenticated.'); return }
 
       let token = tokenRef.current
+
       if (!token) {
         const { data: { session } } = await sb.auth.getSession()
         token = session?.access_token ?? null
       }
+
+      if (!token && typeof window !== 'undefined') {
+        const lsKey = Object.keys(localStorage).find(k => k.includes('auth-token'))
+        if (lsKey) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(lsKey) ?? '{}')
+            token = parsed?.access_token ?? null
+          } catch {}
+        }
+      }
+
       if (!token) { setError('You must be logged in to create an invite.'); return }
 
       const res = await fetch('/api/invites/create', {
