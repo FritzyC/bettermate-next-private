@@ -38,16 +38,13 @@ export default function CreateInviteClientShell() {
     try {
       const sb = getSupabase()
       if (!sb) { setError('Not authenticated.'); return }
-      let { data: { session } } = await sb.auth.getSession()
-      if (!session) {
-        await new Promise(r => setTimeout(r, 1000))
-        const result = await sb.auth.getSession()
-        session = result.data.session
-      }
-      if (!session) { setError('You must be logged in to create an invite.'); return }
+      const { data: { session } } = await sb.auth.getSession()
+      const { data: { user } } = await sb.auth.getUser()
+      const accessToken = session?.access_token
+      if (!user || !accessToken) { setError('You must be logged in to create an invite.'); return }
       const res = await fetch('/api/invites/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + accessToken },
         credentials: 'include',
         cache: 'no-store',
       })
