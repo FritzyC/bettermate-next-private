@@ -37,8 +37,11 @@ export default function WalletPage() {
   const [showTopup, setShowTopup] = useState(false)
 
   useEffect(() => {
-    getSupabase()!.auth.getUser().then(({ data }) => {
+    const sb = getSupabase()
+    if (!sb) { setLoading(false); return }
+    sb.auth.getUser().then(({ data }) => {
       if (data.user) setUserId(data.user.id)
+      else setLoading(false)
     })
   }, [])
 
