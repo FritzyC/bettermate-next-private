@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
+import { getSupabase } from '@/lib/supabaseClient'
 import { colors } from '@/lib/bm/tokens'
 import AddCredits from '@/components/AddCredits'
 
@@ -37,7 +37,7 @@ export default function WalletPage() {
   const [showTopup, setShowTopup] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    getSupabase()!.auth.getUser().then(({ data }) => {
       if (data.user) setUserId(data.user.id)
     })
   }, [])
