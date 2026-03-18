@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { supabase } from '@/lib/supabase/client'
+import { getSupabase } from '@/lib/supabaseClient'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
@@ -29,7 +29,7 @@ function CheckoutForm({ bundleId, credits, onSuccess, onCancel }: {
 
   useEffect(() => {
     async function createIntent() {
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session } } = await (getSupabase()!.auth.getSession())
       if (!session) return
       const res = await fetch('/api/payments', {
         method: 'POST',
@@ -62,7 +62,7 @@ function CheckoutForm({ bundleId, credits, onSuccess, onCancel }: {
       let attempts = 0
       const poll = setInterval(async () => {
         attempts++
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session } } = await (getSupabase()!.auth.getSession())
         if (!session) { clearInterval(poll); return }
         // Webhook will credit — just wait 3s then call onSuccess
         if (attempts >= 3) { clearInterval(poll); onSuccess() }
