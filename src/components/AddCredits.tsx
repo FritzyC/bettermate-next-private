@@ -7,18 +7,17 @@ import { getSupabase } from '@/lib/supabaseClient'
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 const BUNDLES = [
-  { id: 'credits_500',  credits: 500,  cents: 499,  label: '500 credits',  hint: '~$5' },
-  { id: 'credits_1000', credits: 1000, cents: 999,  label: '1000 credits', hint: '~$10' },
-  { id: 'credits_2000', credits: 2000, cents: 1999, label: '2000 credits', hint: '~$20' },
+  { id: 'credits_500',  credits: 500,  cents: 499,  label: '500 credits',  hint: '$4.99' },
+  { id: 'credits_1000', credits: 1000, cents: 999,  label: '1000 credits', hint: '$9.99' },
+  { id: 'credits_2000', credits: 2000, cents: 1999, label: '2000 credits', hint: '$19.99' },
 ]
 
 const SURFACE = '#1a0a2e'; const ELEVATED = '#2d1052'; const BORDER = '#5A3A8A'
 const TEXT = '#ffffff'; const TEXT2 = '#c4b5fd'; const MUTED = '#9d84d0'
-const BRAND = '#7c3aed'; const SUCCESS = '#22c55e'; const ERROR = '#ef4444'
-const GOLD = '#C9A96E'
+const SUCCESS = '#22c55e'; const ERROR = '#ef4444'; const GOLD = '#C9A96E'
 
-function CheckoutForm({ bundleId, credits, onSuccess, onCancel }: {
-  bundleId: string; credits: number; onSuccess: () => void; onCancel: () => void
+function CheckoutForm({ bundleId, credits, customCents, onSuccess, onCancel }: {
+  bundleId: string | null; credits: number; customCents: number | null; onSuccess: () => void; onCancel: () => void
 }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -29,19 +28,24 @@ function CheckoutForm({ bundleId, credits, onSuccess, onCancel }: {
 
   useEffect(() => {
     async function createIntent() {
-      const { data: { session } } = await (getSupabase()!.auth.getSession())
-      if (!session) return
+      const sb = getSupabase()
+      if (!sb) { setError('Not authenticated'); return }
+      const { data: { session } } = await sb.auth.getSession()
+      if (!session) { setError('Please sign in to continue'); return }
+      const body = customCents
+        ? { custom_cents: customCents }
+        : { bundle_id: bundleId }
       const res = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
-        body: JSON.stringify({ bundle_id: bundleId })
+        body: JSON.stringify(body)
       })
       const d = await res.json()
       if (d.clientSecret) setClientSecret(d.clientSecret)
       else setError(d.error || 'Failed to create payment')
     }
     createIntent()
-  }, [bundleId])
+  }, [bundleId, customCents])
 
   async function handlePay() {
     if (!stripe || !elements || !clientSecret) return
@@ -58,15 +62,7 @@ function CheckoutForm({ bundleId, credits, onSuccess, onCancel }: {
     }
     if (paymentIntent?.status === 'succeeded') {
       setDone(true)
-      // Poll for wallet update
-      let attempts = 0
-      const poll = setInterval(async () => {
-        attempts++
-        const { data: { session } } = await (getSupabase()!.auth.getSession())
-        if (!session) { clearInterval(poll); return }
-        // Webhook will credit — just wait 3s then call onSuccess
-        if (attempts >= 3) { clearInterval(poll); onSuccess() }
-      }, 1000)
+      setTimeout(() => onSuccess(), 3000)
     }
     setLoading(false)
   }
@@ -82,7 +78,9 @@ function CheckoutForm({ bundleId, credits, onSuccess, onCancel }: {
   return (
     <div>
       {!clientSecret ? (
-        <div style={{ textAlign: 'center', padding: 20, color: MUTED, fontSize: 13 }}>Preparing payment...</div>
+        <div style={{ textAlign: 'center', padding: 20, color: MUTED, fontSize: 13 }}>
+          {error ? <span style={{ color: ERROR }}>{error}</span> : 'Preparing payment...'}
+        </div>
       ) : (
         <div>
           <div style={{ padding: 14, background: ELEVATED, borderRadius: 12, border: '1px solid ' + BORDER, marginBottom: 16 }}>
@@ -90,7 +88,7 @@ function CheckoutForm({ bundleId, credits, onSuccess, onCancel }: {
           </div>
           {error && <div style={{ padding: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid ' + ERROR, borderRadius: 10, fontSize: 12, color: ERROR, marginBottom: 12 }}>{error}</div>}
           <button onClick={handlePay} disabled={loading || !stripe}
-            style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#000', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>
+            style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#000', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10, fontFamily: 'Georgia, serif' }}>
             {loading ? 'Processing...' : `Pay & Add ${credits} Credits`}
           </button>
           <button onClick={onCancel}
@@ -106,18 +104,30 @@ function CheckoutForm({ bundleId, credits, onSuccess, onCancel }: {
 export default function AddCredits({ shortfall = 0, onSuccess, onCancel }: {
   shortfall?: number; onSuccess: () => void; onCancel: () => void
 }) {
-  const recommended = BUNDLES.find(b => b.credits >= shortfall) || BUNDLES[2]
-  const [selected, setSelected] = useState(recommended.id)
+  const recommended = BUNDLES.find(b => b.credits >= shortfall) || BUNDLES[0]
+  const [selected, setSelected] = useState<string | 'custom'>(recommended.id)
+  const [customDollars, setCustomDollars] = useState<string>('')
   const [paying, setPaying] = useState(false)
-  const bundle = BUNDLES.find(b => b.id === selected)!
+
+  const bundle = BUNDLES.find(b => b.id === selected)
+  const customCents = selected === 'custom' && customDollars ? Math.round(parseFloat(customDollars) * 100) : null
+  const customCredits = customCents ? customCents : 0
+  const displayCredits = selected === 'custom' ? customCredits : (bundle?.credits ?? 0)
+  const canProceed = selected !== 'custom' || (customCents !== null && customCents >= 500)
 
   if (paying) return (
     <div style={{ background: SURFACE, borderRadius: 16, padding: 20, border: '1px solid ' + BORDER }}>
       <div style={{ fontSize: 13, fontWeight: 600, color: TEXT2, marginBottom: 16 }}>
-        Adding {bundle.credits} credits ({bundle.hint})
+        Adding {displayCredits} credits
       </div>
       <Elements stripe={stripePromise}>
-        <CheckoutForm bundleId={selected} credits={bundle.credits} onSuccess={onSuccess} onCancel={() => setPaying(false)} />
+        <CheckoutForm
+          bundleId={selected !== 'custom' ? selected : null}
+          credits={displayCredits}
+          customCents={customCents}
+          onSuccess={onSuccess}
+          onCancel={() => setPaying(false)}
+        />
       </Elements>
     </div>
   )
@@ -138,10 +148,34 @@ export default function AddCredits({ shortfall = 0, onSuccess, onCancel }: {
             <span style={{ color: selected === b.id ? GOLD : MUTED, fontSize: 12 }}>{b.hint}</span>
           </button>
         ))}
+        <button onClick={() => setSelected('custom')}
+          style={{ padding: '12px 16px', background: selected === 'custom' ? 'rgba(201,169,110,0.15)' : ELEVATED, border: '1px solid ' + (selected === 'custom' ? GOLD : BORDER), borderRadius: 12, color: TEXT, fontSize: 13, fontWeight: selected === 'custom' ? 700 : 400, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Custom amount</span>
+          <span style={{ color: selected === 'custom' ? GOLD : MUTED, fontSize: 12 }}>$5 minimum</span>
+        </button>
+        {selected === 'custom' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: ELEVATED, border: '1px solid ' + GOLD, borderRadius: 12 }}>
+            <span style={{ color: GOLD, fontSize: 16, fontWeight: 700 }}>$</span>
+            <input
+              type="number"
+              min={5}
+              step={1}
+              placeholder="5.00"
+              value={customDollars}
+              onChange={e => setCustomDollars(e.target.value)}
+              style={{ flex: 1, background: 'transparent', border: 'none', color: TEXT, fontSize: 16, outline: 'none', fontFamily: 'Georgia, serif' }}
+            />
+            {customCents && customCents >= 500 && (
+              <span style={{ color: MUTED, fontSize: 11 }}>{customCents} credits</span>
+            )}
+          </div>
+        )}
       </div>
-      <button onClick={() => setPaying(true)}
-        style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#000', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 10 }}>
-        Add {bundle.credits} Credits {bundle.hint}
+      <button onClick={() => canProceed && setPaying(true)} disabled={!canProceed}
+        style={{ width: '100%', padding: 14, background: canProceed ? GOLD : ELEVATED, border: 'none', borderRadius: 12, color: canProceed ? '#000' : MUTED, fontSize: 14, fontWeight: 700, cursor: canProceed ? 'pointer' : 'not-allowed', marginBottom: 10, fontFamily: 'Georgia, serif' }}>
+        {selected === 'custom'
+          ? (canProceed ? `Add ${customCredits} Credits` : 'Enter $5 or more')
+          : `Add ${bundle?.credits ?? 0} Credits — ${bundle?.hint ?? ''}`}
       </button>
       <button onClick={onCancel}
         style={{ width: '100%', padding: 10, background: 'transparent', border: '1px solid ' + BORDER, borderRadius: 12, color: MUTED, fontSize: 13, cursor: 'pointer' }}>

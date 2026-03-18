@@ -26,20 +26,36 @@ export async function POST(req: NextRequest) {
   const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { bundle_id } = await req.json()
-  const bundle = BUNDLES[bundle_id]
-  if (!bundle) return NextResponse.json({ error: 'Invalid bundle' }, { status: 400 })
+  const body = await req.json()
+  const { bundle_id, custom_cents } = body
+
+  let amount: number
+  let credits: number
+  let bundleId: string
+
+  if (custom_cents) {
+    if (custom_cents < 500) return NextResponse.json({ error: 'Minimum $5.00' }, { status: 400 })
+    amount = custom_cents
+    credits = custom_cents
+    bundleId = 'custom'
+  } else {
+    const bundle = BUNDLES[bundle_id]
+    if (!bundle) return NextResponse.json({ error: 'Invalid bundle' }, { status: 400 })
+    amount = bundle.cents
+    credits = bundle.credits
+    bundleId = bundle_id
+  }
 
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: bundle.cents,
+    amount,
     currency: 'usd',
     metadata: {
       user_id: user.id,
-      bundle_id,
-      credits_amount: String(bundle.credits),
+      bundle_id: bundleId,
+      credits_amount: String(credits),
       app_env: process.env.NODE_ENV || 'production',
     },
   })
 
-  return NextResponse.json({ clientSecret: paymentIntent.client_secret, bundle })
+  return NextResponse.json({ clientSecret: paymentIntent.client_secret, credits, amount })
 }
