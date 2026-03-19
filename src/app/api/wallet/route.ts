@@ -4,6 +4,9 @@ import { getSupabaseAdmin } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'missing_service_key' }, { status: 500 })
+  }
   const admin = await getSupabaseAdmin()
   const { searchParams } = new URL(req.url)
   const userId = searchParams.get('userId')
