@@ -50,8 +50,12 @@ export default function WalletPage() {
     fetch('/api/wallet?userId=' + userId)
       .then((r) => r.json())
       .then((data) => {
-        setCredits({ balance: data.balance, locked_balance: data.locked_balance })
+        setCredits({ balance: data.balance ?? 0, locked_balance: data.locked_balance ?? 0 })
         setLedger(data.ledger ?? [])
+        setLoading(false)
+      })
+      .catch(() => {
+        setCredits({ balance: 0, locked_balance: 0 })
         setLoading(false)
       })
   }, [userId])
