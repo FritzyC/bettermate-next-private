@@ -12,10 +12,12 @@ function adminClient() {
 }
 
 export async function POST(req: NextRequest) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2026-02-25.clover' })
+  const stripeKey = (process.env.STRIPE_SECRET_KEY ?? '').trim()
+  const webhookSecret = (process.env.STRIPE_WEBHOOK_SECRET ?? '').trim()
+  if (!stripeKey || !webhookSecret) return NextResponse.json({ error: 'missing_stripe_env' }, { status: 500 })
+  const stripe = new Stripe(stripeKey, { apiVersion: '2026-02-25.clover' })
   const body = await req.text()
-  const sig = req.headers.get('stripe-signature')!
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
+  const sig = req.headers.get('stripe-signature') ?? ''
 
   let event: Stripe.Event
   try {
