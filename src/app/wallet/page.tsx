@@ -37,21 +37,22 @@ export default function WalletPage() {
   const [showTopup, setShowTopup] = useState(false)
 
   useEffect(() => {
+    // Try localStorage first (fastest)
+    if (typeof window !== 'undefined') {
+      const lsKey = Object.keys(localStorage).find(k => k.includes('auth-token'))
+      if (lsKey) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(lsKey) ?? '{}')
+          const uid = parsed?.user?.id
+          if (uid) { setUserId(uid); return }
+        } catch {}
+      }
+    }
+    // Fallback to Supabase session
     const sb = getSupabase()
     if (!sb) { setLoading(false); return }
     sb.auth.getSession().then(({ data: { session } }) => {
       if (session?.user?.id) { setUserId(session.user.id); return }
-      // localStorage fallback
-      if (typeof window !== 'undefined') {
-        const lsKey = Object.keys(localStorage).find(k => k.includes('auth-token'))
-        if (lsKey) {
-          try {
-            const parsed = JSON.parse(localStorage.getItem(lsKey) ?? '{}')
-            const uid = parsed?.user?.id
-            if (uid) { setUserId(uid); return }
-          } catch {}
-        }
-      }
       sb.auth.getUser().then(({ data }) => {
         if (data.user) setUserId(data.user.id)
         else setLoading(false)
