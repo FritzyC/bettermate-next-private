@@ -30,14 +30,22 @@ function CheckoutForm({ bundleId, credits, customCents, onSuccess, onCancel }: {
     async function createIntent() {
       const sb = getSupabase()
       if (!sb) { setError('Not authenticated'); return }
+      let token: string | null = null
       const { data: { session } } = await sb.auth.getSession()
-      if (!session) { setError('Please sign in to continue'); return }
+      token = session?.access_token ?? null
+      if (!token && typeof window !== 'undefined') {
+        const lsKey = Object.keys(localStorage).find(k => k.includes('auth-token'))
+        if (lsKey) {
+          try { token = JSON.parse(localStorage.getItem(lsKey) ?? '{}')?.access_token ?? null } catch {}
+        }
+      }
+      if (!token) { setError('Please sign in to continue'); return }
       const body = customCents
         ? { custom_cents: customCents }
         : { bundle_id: bundleId }
       const res = await fetch('/api/payments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.access_token },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify(body)
       })
       const d = await res.json()
