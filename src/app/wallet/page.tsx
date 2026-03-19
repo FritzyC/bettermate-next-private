@@ -39,9 +39,15 @@ export default function WalletPage() {
   useEffect(() => {
     const sb = getSupabase()
     if (!sb) { setLoading(false); return }
-    sb.auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id)
-      else setLoading(false)
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) {
+        setUserId(session.user.id)
+      } else {
+        sb.auth.getUser().then(({ data }) => {
+          if (data.user) setUserId(data.user.id)
+          else setLoading(false)
+        })
+      }
     })
   }, [])
 
