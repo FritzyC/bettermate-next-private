@@ -6,9 +6,11 @@ export const runtime = 'nodejs'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
+
   if (searchParams.get('ping')) {
     return NextResponse.json({ pong: true, hasUrl: !!(process.env.NEXT_PUBLIC_SUPABASE_URL), hasKey: !!(process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) })
   }
+
   const url = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? '').trim()
   const key = (process.env.SUPABASE_SERVICE_ROLE_KEY ?? '').trim()
 
@@ -16,7 +18,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'missing_env', balance: 0, locked_balance: 0, ledger: [] })
   }
 
-  const { searchParams } = new URL(req.url)
   const userId = searchParams.get('userId')
 
   if (!userId) {
