@@ -26,8 +26,8 @@ export default function Loading() {
           style={{
             width: 220,
             height: 'auto',
-            mixBlendMode: 'screen',
-            filter: 'drop-shadow(0 0 40px rgba(124, 58, 237, 0.5))',
+            borderRadius: 16,
+            filter: 'drop-shadow(0 0 40px rgba(124, 58, 237, 0.4))',
           }}
         />
       </div>

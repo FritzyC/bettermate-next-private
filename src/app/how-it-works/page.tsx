@@ -87,7 +87,7 @@ export default function HowItWorksPage() {
 
       {/* Hero */}
       <div style={{ maxWidth: 640, margin: "0 auto", padding: "72px 28px 0", textAlign: "center" }}>
-        <img src="/bettermate-logo.png" alt="BetterMate" style={{ width: 80, height: "auto", mixBlendMode: "screen", marginBottom: 24 }} />
+        <img src="/bettermate-logo.png" alt="BetterMate" style={{ width: 200, height: "auto", marginBottom: 16, borderRadius: 12 }} />
         <p style={{ fontSize: 11, color: gold, letterSpacing: 2, textTransform: "uppercase", margin: "0 0 20px" }}>The BetterMate Journey</p>
         <h1 style={{ fontSize: "clamp(28px,5vw,40px)", fontWeight: 700, margin: "0 0 20px", lineHeight: 1.15, color: "#fff" }}>
           Not just who catches your eye —<br />who fits your life.

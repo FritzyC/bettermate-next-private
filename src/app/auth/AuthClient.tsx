@@ -115,7 +115,7 @@ export function AuthClient(): React.ReactElement {
       <div style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(219,39,119,0.07) 100%)', border: '1px solid rgba(124,58,237,0.28)', borderRadius: 20, padding: '40px 32px', maxWidth: 400, width: '100%' }}>
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <img src="/bettermate-logo.png" alt="BetterMate" style={{ width: 64, height: 'auto', mixBlendMode: 'screen', marginBottom: 16 }} />
+          <img src="/bettermate-logo.png" alt="BetterMate" style={{ width: 160, height: 'auto', marginBottom: 8, borderRadius: 12 }} />
           <p style={{ color: '#7A6A96', fontSize: 13, margin: 0 }}>
             {step === 'email' ? 'Sign in to continue' : 'Check your email'}
           </p>
