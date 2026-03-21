@@ -63,16 +63,21 @@ export async function proxy(request: NextRequest) {
     return response
   }
 
-  // Check invite gate — user must have an accepted invite
-  const { data: acceptedInvite } = await supabase
-    .from("invites")
-    .select("id")
-    .eq("accepted_by_user_id", user.id)
-    .eq("status", "accepted")
-    .maybeSingle()
+  // Check invite gate — user must have an accepted invite OR be an admin
+  const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean)
+  const isAdmin = adminEmails.includes((user.email ?? "").toLowerCase())
 
-  if (!acceptedInvite) {
-    return NextResponse.redirect(new URL("/request-access", request.url))
+  if (!isAdmin) {
+    const { data: acceptedInvite } = await supabase
+      .from("invites")
+      .select("id")
+      .eq("accepted_by_user_id", user.id)
+      .eq("status", "accepted")
+      .maybeSingle()
+
+    if (!acceptedInvite) {
+      return NextResponse.redirect(new URL("/request-access", request.url))
+    }
   }
 
   if (!pathname.startsWith("/onboarding")) {
