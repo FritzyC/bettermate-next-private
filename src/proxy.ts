@@ -12,6 +12,8 @@ const PUBLIC_PREFIXES = [
   "/login",
   "/signup",
   "/loging",
+  "/request-access",
+  "/how-it-works",
 ]
 
 function isPublic(pathname: string): boolean {
@@ -61,6 +63,18 @@ export async function proxy(request: NextRequest) {
     return response
   }
 
+  // Check invite gate — user must have an accepted invite
+  const { data: acceptedInvite } = await supabase
+    .from("invites")
+    .select("id")
+    .eq("accepted_by_user_id", user.id)
+    .eq("status", "accepted")
+    .maybeSingle()
+
+  if (!acceptedInvite) {
+    return NextResponse.redirect(new URL("/request-access", request.url))
+  }
+
   if (!pathname.startsWith("/onboarding")) {
     const { data: fingerprint } = await supabase
       .from("user_fingerprint")
@@ -68,8 +82,6 @@ export async function proxy(request: NextRequest) {
       .eq("id", user.id)
       .maybeSingle()
 
-    // Only redirect if we got a row back AND it's explicitly false
-    // If no row exists yet, let them through (they may be mid-onboarding)
     const onboardingComplete = fingerprint?.onboarding_complete === true
     const hasRow = fingerprint !== null
 
