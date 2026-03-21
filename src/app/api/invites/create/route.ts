@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   const token = crypto.randomBytes(32).toString('hex'); // 64 hex chars
 
   // Default expires: 7 days
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: inviteRow, error: insErr } = await adminClient
     .from('invites')
