@@ -20,7 +20,7 @@ export default function RequestAccessPage() {
           Request an Invite
         </a>
 
-        <p style={{ color: "#3a2a55", fontSize: 11, marginTop: 28, lineHeight: 1.6 }}>
+        <p style={{ color: "#9d84d0", fontSize: 12, marginTop: 28, lineHeight: 1.6 }}>
           Where connection earns its place.
         </p>
       </div>
