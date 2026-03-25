@@ -13,17 +13,13 @@ export default function RequestAccessPage() {
           Every person here entered through a personal invitation from someone who believed they belonged in a more intentional space.
         </p>
         <p style={{ color: "#b09fd0", fontSize: 15, lineHeight: 1.8, margin: "0 0 32px" }}>
-          If you received an invite link, open it directly to get started. If you do not have one yet, you can request access below.
+          If you received an invite link, open it directly to get started. If you do not have one yet, you can request access below by telling us why you'd like to join BetterMate.
         </p>
         <a href="mailto:fritz@charpconsulting.com?subject=BetterMate Invite Request&body=Hi — I would like to request an invite to BetterMate."
           style={{ display: "inline-block", background: "linear-gradient(135deg, #7c3aed, #db2777)", color: "#fff", borderRadius: 12, padding: "14px 32px", fontSize: 15, fontWeight: 700, textDecoration: "none", fontFamily: "Georgia, serif", marginBottom: 20 }}>
           Request an Invite
         </a>
-        <div>
-          <a href="/how-it-works" style={{ color: gold, fontSize: 12, textDecoration: "underline", fontFamily: "Georgia, serif" }}>
-            Learn how BetterMate works →
-          </a>
-        </div>
+
         <p style={{ color: "#3a2a55", fontSize: 11, marginTop: 28, lineHeight: 1.6 }}>
           Where connection earns its place.
         </p>
