@@ -106,7 +106,7 @@ export default function RequestAccessPage() {
 
       <div style={{ position: "absolute", bottom: 32, left: 0, right: 0, textAlign: "center" }}>
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.12)" }}>
-          BetterMate — Where connection earns its place.
+          BetterMate &mdash; Where connection earns its place.
         </p>
       </div>
     </div>
