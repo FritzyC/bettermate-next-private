@@ -126,7 +126,7 @@ export default function InviteClientShell({ code }: { code: string }) {
           BetterMate was created for people who want more than attraction in the moment. It is built for those who care about emotional maturity, shared direction, and the possibility of building something meaningful with someone who genuinely fits their life.
         </p>
         <p style={{ fontSize: 18, color: gold, fontStyle: "italic", margin: "0 auto 40px", letterSpacing: 0.3 }}>
-          Not just who catches your eye — who fits your life.
+          Where intention meets action — and values align.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
