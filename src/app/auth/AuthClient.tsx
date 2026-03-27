@@ -18,8 +18,18 @@ export function AuthClient(): React.ReactElement {
     const supabase = getSupabase();
     if (!supabase) { setCheckingSession(false); return; }
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) window.location.href = nextPath;
-      else setCheckingSession(false);
+      if (session) { window.location.href = nextPath; return; }
+      // localStorage fallback
+      if (typeof window !== 'undefined') {
+        const lsKey = Object.keys(localStorage).find(k => k.includes('auth-token'))
+        if (lsKey) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(lsKey) ?? '{}')
+            if (parsed?.user?.id) { window.location.href = nextPath; return; }
+          } catch {}
+        }
+      }
+      setCheckingSession(false);
     });
   }, []);
 
