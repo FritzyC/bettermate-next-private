@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { useOnboardingGuard } from '@/hooks/useOnboardingGuard';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase/client';
+import { getSupabase } from '@/lib/supabaseClient';
+import NotificationBell from '@/components/NotificationBell';
 
 export default function MatchesClientShell() {
   useOnboardingGuard();
@@ -17,12 +18,15 @@ export default function MatchesClientShell() {
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const sb2 = getSupabase();
+      if (!sb2) { router.replace('/auth?next=/matches'); return; }
+      const { data: { session } } = await sb2.auth.getSession();
+      const user = session?.user ?? null;
       if (!user) { router.replace('/auth?next=/matches'); return; }
       setUserEmail(user.email ?? null);
       setUserId(user.id);
       userIdRef.current = user.id;
-      const { data, error } = await supabase
+      const { data, error } = await sb2
         .from('matches')
         .select('*')
         .or(`user_a_id.eq.${user.id},user_b_id.eq.${user.id}`)
@@ -32,10 +36,10 @@ export default function MatchesClientShell() {
         // Fetch other user fingerprints for photos
         const otherIds = data.map((m: any) => m.user_a_id === user.id ? m.user_b_id : m.user_a_id);
         if (otherIds.length > 0) {
-          const { data: fps } = await supabase.from('user_fingerprint').select('id, photos').in('id', otherIds);
-          const { data: authData } = await supabase.from('user_fingerprint').select('id').in('id', otherIds);
+          const { data: fps } = await sb2.from('user_fingerprint').select('id, photos, display_name').in('id', otherIds);
+          
           const map: Record<string, { photos: string[]; name: string }> = {};
-          (fps ?? []).forEach((fp: any) => { map[fp.id] = { photos: fp.photos ?? [], name: '' }; });
+          (fps ?? []).forEach((fp: any) => { map[fp.id] = { photos: fp.photos ?? [], name: fp.display_name ?? '' }; });
           setOtherUsers(map);
         }
       }
@@ -54,7 +58,8 @@ export default function MatchesClientShell() {
       <div style={{ maxWidth:720, margin:'0 auto' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:32 }}>
           <h1 style={{ fontSize:28, fontWeight:400, fontFamily:"Georgia,serif", color:'#e8d8f8' }}>Your Matches</h1>
-          <div style={{ display:'flex', gap:12, alignItems:'center' }}>
+          <div style={{ display:'flex', gap:16, alignItems:'center' }}>
+            {userId && <NotificationBell userId={userId} />}
             <a href="/profile" style={{ fontSize:13, color:'#6b5b8a', textDecoration:'none' }}>Profile</a>
             <span style={{ color:'#2a1a45', fontSize:13 }}>{userEmail}</span>
           </div>
@@ -89,7 +94,9 @@ export default function MatchesClientShell() {
                 })()}
                 <div>
                   <div style={{ fontSize:12, color:'#4a3a6a', marginBottom:2, textTransform:'uppercase', letterSpacing:'0.1em' }}>Match</div>
-                  <div style={{ fontWeight:600, color:'#e8d8f8' }}>{'#' + String(match.id).slice(0,8)}</div>
+                  <div style={{ fontWeight:600, color:'#e8d8f8' }}>
+                    {otherUsers[match.user_a_id === (userIdRef.current ?? userId) ? match.user_b_id : match.user_a_id]?.name || 'Your connection'}
+                  </div>
                   <div style={{ fontSize:12, color:'#3a2a55', marginTop:4 }}>{new Date(match.created_at).toLocaleDateString()}</div>
                 </div>
               </a>
