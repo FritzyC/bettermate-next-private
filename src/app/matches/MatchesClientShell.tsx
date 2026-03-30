@@ -60,6 +60,7 @@ export default function MatchesClientShell() {
           <h1 style={{ fontSize:28, fontWeight:400, fontFamily:"Georgia,serif", color:'#e8d8f8' }}>Your Matches</h1>
           <div style={{ display:'flex', gap:16, alignItems:'center' }}>
             {userId && <NotificationBell userId={userId} />}
+            <a href="/inside" style={{ fontSize:13, color:'#4a3a6a', textDecoration:'none' }}>Inside</a>
             <a href="/profile" style={{ fontSize:13, color:'#6b5b8a', textDecoration:'none' }}>Profile</a>
             <span style={{ color:'#2a1a45', fontSize:13 }}>{userEmail}</span>
           </div>
@@ -75,6 +76,9 @@ export default function MatchesClientShell() {
               </a>
               <a href="/profile" style={{ display:'inline-block', padding:'12px 24px', background:'rgba(124,58,237,0.1)', color:'#c4b5fd', borderRadius:50, textDecoration:'none', fontWeight:600, fontSize:14, border:'1px solid rgba(124,58,237,0.2)' }}>
                 Edit Profile
+              </a>
+              <a href="/inside" style={{ display:'inline-block', padding:'12px 24px', background:'transparent', color:'#6b5b8a', borderRadius:50, textDecoration:'none', fontSize:13, border:'1px solid rgba(124,58,237,0.1)' }}>
+                Inside BetterMate
               </a>
             </div>
           </div>
