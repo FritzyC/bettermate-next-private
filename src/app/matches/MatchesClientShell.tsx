@@ -21,7 +21,19 @@ export default function MatchesClientShell() {
     (async () => {
       const sb = getSupabase();
       if (!sb) { router.replace('/auth?next=/matches'); return; }
-      const { data: { session } } = await sb.auth.getSession();
+      let { data: { session } } = await sb.auth.getSession();
+      if (!session && typeof window !== 'undefined') {
+        const lsKey = Object.keys(localStorage).find(k => k.includes('auth-token'));
+        if (lsKey) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(lsKey) ?? '{}');
+            if (parsed?.access_token) {
+              const { data } = await sb.auth.setSession({ access_token: parsed.access_token, refresh_token: parsed.refresh_token ?? '' });
+              session = data.session;
+            }
+          } catch {}
+        }
+      }
       const user = session?.user ?? null;
       if (!user) { router.replace('/auth?next=/matches'); return; }
       setUserEmail(user.email ?? null);
