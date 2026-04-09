@@ -27,11 +27,21 @@ export default function MatchesClientShell() {
         if (lsKey) {
           try {
             const parsed = JSON.parse(localStorage.getItem(lsKey) ?? '{}');
-            if (parsed?.access_token) {
-              const { data } = await sb.auth.setSession({ access_token: parsed.access_token, refresh_token: parsed.refresh_token ?? '' });
+            const token = parsed?.access_token ?? parsed?.session?.access_token;
+            const refresh = parsed?.refresh_token ?? parsed?.session?.refresh_token ?? '';
+            if (token) {
+              const { data } = await sb.auth.setSession({ access_token: token, refresh_token: refresh });
               session = data.session;
             }
           } catch {}
+        }
+      }
+      // Final fallback — try getUser with current token
+      if (!session) {
+        const { data: { user: u } } = await sb.auth.getUser();
+        if (u) {
+          const { data: { session: s2 } } = await sb.auth.getSession();
+          session = s2;
         }
       }
       const user = session?.user ?? null;
