@@ -12,6 +12,7 @@ export default function MatchesClientShell() {
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const userIdRef = React.useRef<string | null>(null);
   const [otherUsers, setOtherUsers] = useState<Record<string, { photos: string[]; name: string }>>({});
@@ -24,6 +25,8 @@ export default function MatchesClientShell() {
       const user = session?.user ?? null;
       if (!user) { router.replace('/auth?next=/matches'); return; }
       setUserEmail(user.email ?? null);
+        const { data: ufp } = await sb2.from('user_fingerprint').select('display_name').eq('id', user.id).maybeSingle();
+        if (ufp?.display_name) setDisplayName(ufp.display_name);
       setUserId(user.id);
       userIdRef.current = user.id;
       const { data, error } = await sb2
@@ -57,12 +60,12 @@ export default function MatchesClientShell() {
     <div style={{ minHeight:'100vh', background:'linear-gradient(135deg,#06030f,#0e0720)', color:'#fff', fontFamily:'system-ui', padding:'40px 24px' }}>
       <div style={{ maxWidth:720, margin:'0 auto' }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:32 }}>
-          <h1 style={{ fontSize:28, fontWeight:400, fontFamily:"Georgia,serif", color:'#e8d8f8' }}>Your Matches</h1>
+          <h1 style={{ fontSize:28, fontWeight:400, fontFamily:"Georgia,serif", color:'#f4f0fc' }}>Your Matches</h1>
           <div style={{ display:'flex', gap:16, alignItems:'center' }}>
             {userId && <NotificationBell userId={userId} />}
             <a href="/inside" style={{ fontSize:13, color:'#4a3a6a', textDecoration:'none' }}>Inside</a>
             <a href="/profile" style={{ fontSize:13, color:'#6b5b8a', textDecoration:'none' }}>Profile</a>
-            <span style={{ color:'#2a1a45', fontSize:13 }}>{userEmail}</span>
+            <span style={{ color:'rgba(196,181,253,0.7)', fontSize:13, letterSpacing:'0.03em' }}>{displayName || (userEmail ? userEmail.split('@')[0] : '')}</span>
           </div>
         </div>
         {matches.length === 0 ? (

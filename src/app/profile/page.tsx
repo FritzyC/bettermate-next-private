@@ -43,6 +43,13 @@ export default function ProfilePage() {
         <h1 style={{ fontFamily:fonts.serif, fontSize:28, color:colors.textPrimary, margin:'0 0 8px' }}>Your Profile</h1>
         <p style={{ fontFamily:fonts.sans, fontSize:15, color:colors.textMuted, margin:'0 0 32px' }}>Update your photos so people can recognise you when you meet.</p>
 
+        {/* Notification preferences */}
+        <div style={{ padding:'16px 20px', background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.12)', borderRadius:16, marginBottom:16 }}>
+          <p style={{ fontFamily:'Georgia,serif', fontSize:15, color:'#c4b5fd', margin:'0 0 4px', fontWeight:600 }}>Notifications</p>
+          <p style={{ fontFamily:'system-ui,sans-serif', fontSize:12, color:'#6b5b8a', margin:0 }}>Email notifications sent to your registered address when a new match is created.</p>
+          <p style={{ fontFamily:'system-ui,sans-serif', fontSize:11, color:'#3a2a55', margin:'8px 0 0', fontStyle:'italic' }}>In-app notifications are always on.</p>
+        </div>
+
         {/* Preferences link */}
         <a href="/preferences" style={{ display:'block', padding:'16px 20px', background:'rgba(124,58,237,0.06)', border:'1px solid rgba(124,58,237,0.12)', borderRadius:16, color:'#c4b5fd', fontFamily:"Georgia,serif", fontSize:15, textDecoration:'none', marginBottom:16 }}>
           ⚙️ Match Preferences & Dealbreakers →
