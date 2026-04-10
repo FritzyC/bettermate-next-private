@@ -238,6 +238,9 @@ await trackEvent('plan_venue_selected', { venue_id: venueId, fairness_bucket: se
     const supabase = getSupabase();
     if (!supabase) return;
     const checkinDeadline = new Date(new Date(time).getTime() + 24 * 3600000).toISOString();
+    const meetDeadline = new Date(Date.now() + 168 * 3600000).toISOString();
+    // Set 168h meet window on matches table
+    await supabase.from('matches').update({ meet_deadline: meetDeadline }).eq('id', matchId);
     const { data: updated } = await supabase.from('date_plans')
       .update({ status: 'plan_scheduled', checkin_deadline_at: checkinDeadline })
       .eq('match_id', matchId).select().single();
