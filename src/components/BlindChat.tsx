@@ -99,7 +99,7 @@ export default function BlindChat({
     const myCount = isUser1 ? matchData.user1_qualifying_msgs : matchData.user2_qualifying_msgs;
     const theirCount = isUser1 ? matchData.user2_qualifying_msgs : matchData.user1_qualifying_msgs;
     const timeElapsed = hoursSince(matchData.blind_chat_started_at) >= 24;
-    const mutualThreshold = myCount >= 3 && theirCount >= 3;
+    const mutualThreshold = myCount >= 6 && theirCount >= 6;
 
     if (timeElapsed && mutualThreshold) {
       const reason = 'mutual_interactions';
@@ -119,9 +119,9 @@ export default function BlindChat({
   if (!match) return null;
 
   const isUser1 = match.user_a_id === userId;
-  const myCount = Math.min(isUser1 ? match.user1_qualifying_msgs : match.user2_qualifying_msgs, 3);
-  const theirCount = Math.min(isUser1 ? match.user2_qualifying_msgs : match.user1_qualifying_msgs, 3);
-  const THRESHOLD = 3;
+  const myCount = Math.min(isUser1 ? match.user1_qualifying_msgs : match.user2_qualifying_msgs, 6);
+  const theirCount = Math.min(isUser1 ? match.user2_qualifying_msgs : match.user1_qualifying_msgs, 6);
+  const THRESHOLD = 6;
 
   if (revealed || match.blind_revealed) {
     return (
@@ -131,7 +131,7 @@ export default function BlindChat({
           <div style={{ fontSize: 13, fontWeight: 600, color: SUCCESS }}>Photos unlocked</div>
           <div style={{ fontSize: 11, color: MUTED }}>
             {match.blind_reveal_reason === 'mutual_interactions'
-              ? 'You both showed up. 24 hours passed and you each sent 3+ messages.'
+              ? 'You both showed up. 24 hours passed and you each sent 6+ messages.'
               : 'Blind chat period complete.'}
           </div>
         </div>

@@ -90,7 +90,7 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
         const isUser1 = matchData.user_a_id === userId;
         const field = isUser1 ? 'user1_qualifying_msgs' : 'user2_qualifying_msgs';
         const currentCount = isUser1 ? matchData.user1_qualifying_msgs : matchData.user2_qualifying_msgs;
-        if (currentCount < 3) {
+        if (currentCount < 6) {
           await supabase.from('matches').update({ [field]: currentCount + 1 }).eq('id', matchId);
         }
       }
@@ -216,6 +216,19 @@ export default function MatchClientShell({ matchId }: { matchId: string }) {
       {showSnapshot && (
         <div style={{ flexShrink: 0, maxHeight: '42vh', overflowY: 'auto', background: '#1E1035', borderBottom: '1px solid #5a1a8a', padding: '16px' }}>
           <CompatibilitySnapshot matchId={matchId} />
+        </div>
+      )}
+
+      {/* Date Planning Prompt — shown after reveal when no plan started */}
+      {blindRevealed && planStatus === '' && (
+        <div style={{ flexShrink:0, background:'linear-gradient(135deg,rgba(201,169,110,0.1),rgba(124,58,237,0.08))', border:'1px solid rgba(201,169,110,0.3)', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
+          <div>
+            <div style={{ fontSize:13, fontWeight:600, color:'#C9A96E', fontFamily:'Georgia,serif', marginBottom:3 }}>Your 72-hour date window is open.</div>
+            <div style={{ fontSize:11, color:'rgba(201,169,110,0.6)' }}>Start your date plan now — agree on a venue and time before the window closes.</div>
+          </div>
+          <button onClick={() => setShowDatePlan(true)} style={{ flexShrink:0, padding:'9px 18px', background:'rgba(201,169,110,0.15)', border:'1px solid rgba(201,169,110,0.4)', borderRadius:10, color:'#C9A96E', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'Georgia,serif' }}>
+            Plan Date →
+          </button>
         </div>
       )}
 
